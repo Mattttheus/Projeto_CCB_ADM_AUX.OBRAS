@@ -1,0 +1,71 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\wamp64\\www\\Projeto.poo\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\wamp64\\www\\Projeto.poo\\page\\gerenciar_obra.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:page\\gerenciar_obra.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\wamp64\\www\\Projeto.poo\\page\\financeiro.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:page\\financeiro.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\wamp64\\www\\Projeto.poo\\config\\conexao.php||{3B902123-F8A7-4915-9F01-361F908088D0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:config\\conexao.php||{3B902123-F8A7-4915-9F01-361F908088D0}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 100,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "financeiro.php",
+              "DocumentMoniker": "C:\\wamp64\\www\\Projeto.poo\\page\\financeiro.php",
+              "RelativeDocumentMoniker": "page\\financeiro.php",
+              "ToolTip": "C:\\wamp64\\www\\Projeto.poo\\page\\financeiro.php",
+              "RelativeToolTip": "page\\financeiro.php",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002338|",
+              "WhenOpened": "2026-08-10T02:23:03.947Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "conexao.php",
+              "DocumentMoniker": "C:\\wamp64\\www\\Projeto.poo\\config\\conexao.php",
+              "RelativeDocumentMoniker": "config\\conexao.php",
+              "ToolTip": "C:\\wamp64\\www\\Projeto.poo\\config\\conexao.php",
+              "RelativeToolTip": "config\\conexao.php",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002338|",
+              "WhenOpened": "2026-08-10T02:18:20.725Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "gerenciar_obra.php",
+              "DocumentMoniker": "C:\\wamp64\\www\\Projeto.poo\\page\\gerenciar_obra.php",
+              "RelativeDocumentMoniker": "page\\gerenciar_obra.php",
+              "ToolTip": "C:\\wamp64\\www\\Projeto.poo\\page\\gerenciar_obra.php",
+              "RelativeToolTip": "page\\gerenciar_obra.php",
+              "ViewState": "AgIAAJ0CAAAAAAAAAAAAALYCAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.002338|",
+              "WhenOpened": "2026-08-10T01:34:47.247Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
