@@ -15,6 +15,12 @@ if ($obra_id <= 0) {
     exit;
 }
 
+if (!Auth::canAccessProject($conn, $obra_id)) {
+    $_SESSION['erro'] = 'Você não tem acesso a esta obra.';
+    header('Location: gerenciar_obra.php');
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ' . $redirect);
     exit;

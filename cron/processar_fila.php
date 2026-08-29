@@ -1,12 +1,7 @@
 <?php
 // cron/processar_fila.php
 require_once __DIR__ . '/../config/conexao.php';
-$composerAutoload = __DIR__ . '/../vendor/autoload.php';
-if (file_exists($composerAutoload)) {
-    require_once $composerAutoload; // garante autoload do Composer
-} else {
-    error_log('Composer autoload not found: ' . $composerAutoload . '. Execute: composer require phpmailer/phpmailer');
-}
+require_once __DIR__ . '/../config/mailer.php';
 
 // Buscar até 20 e-mails pendentes por lote
 $sqlFila = "SELECT * FROM fila_emails WHERE status = 'pendente' AND tentativas < 3 LIMIT 20";
@@ -27,15 +22,15 @@ if ($resFila && $resFila->num_rows > 0) {
         try {
             // Configurações SMTP
             $mail->isSMTP();
-            $mail->Host       = 'smtp.gmail.com';
+            $mail->Host       = $mail_host;
             $mail->SMTPAuth   = true;
-            $mail->Username   = 'seu_email@gmail.com';
-            $mail->Password   = 'sua_senha_de_app';
+            $mail->Username   = $mail_user;
+            $mail->Password   = $mail_pass;
             $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = 587;
             $mail->CharSet    = 'UTF-8';
 
-            $mail->setFrom('seu_email@gmail.com', 'Auxiliar Obras');
+            $mail->setFrom($mail_user, 'Auxiliar Obras');
             $mail->addAddress($item['destinatario']);
             $mail->isHTML(true);
             $mail->Subject = $item['assunto'];

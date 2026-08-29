@@ -1,17 +1,107 @@
-:root { --brand: #12324a; --brand-dark: #0b2233; --accent: #0f766e; --surface: #ffffff; --page: #f4f7fa; --border: #dce4eb; }
-body { min-height: 100vh; background: var(--page); color: #263845; font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-.app-header { background: linear-gradient(120deg, var(--brand-dark), var(--brand)); color: #fff; padding: 1.5rem 0; box-shadow: 0 3px 16px rgba(11, 34, 51, .18); }
-.eyebrow { color: #83d5cc; font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-.page-title { font-size: clamp(1.45rem, 2.5vw, 2rem); font-weight: 750; margin: .15rem 0 0; }
-.surface-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 5px 18px rgba(25, 49, 69, .06); }
-.section-heading { font-weight: 700; color: var(--brand-dark); }
-.section-caption { color: #6b7d8a; font-size: .9rem; }
-.btn-brand { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-brand:hover, .btn-brand:focus { background: #0b5d57; border-color: #0b5d57; color: #fff; }
-.metric { border-left: 4px solid #d44c4c; }
-.table thead th { background: #f1f5f8; color: #536775; font-size: .73rem; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
-.status { font-size: .75rem; font-weight: 700; padding: .4rem .58rem; }
-#calendar { min-height: 650px; padding: 1rem; }
-.fc .fc-button-primary { background: var(--brand); border-color: var(--brand); }
-.fc .fc-button-primary:hover, .fc .fc-button-primary:not(:disabled).fc-button-active { background: var(--brand-dark); border-color: var(--brand-dark); }
-.fc .fc-toolbar-title { color: var(--brand-dark); font-size: 1.2rem; font-weight: 700; }
+:root {
+    --brand: #12324a;
+    --brand-dark: #0b2233;
+    --accent: #0f766e;
+    --surface: #ffffff;
+    --page: #f4f7fa;
+    --border: #dce4eb;
+}
+
+body {
+    min-height: 100vh;
+    background: var(--page);
+    color: #263845;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.app-header {
+    background: linear-gradient(120deg, var(--brand-dark), var(--brand));
+    color: #fff;
+    padding: 1.5rem 0;
+    box-shadow: 0 3px 16px rgba(11, 34, 51, .18);
+}
+
+.eyebrow {
+    color: #83d5cc;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.page-title {
+    font-size: clamp(1.45rem, 2.5vw, 2rem);
+    font-weight: 750;
+    margin: .15rem 0 0;
+}
+
+.surface-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 5px 18px rgba(25, 49, 69, .06);
+}
+
+.section-heading {
+    font-weight: 700;
+    color: var(--brand-dark);
+}
+
+.section-caption {
+    color: #6b7d8a;
+    font-size: .9rem;
+}
+
+.btn-brand {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+
+.btn-brand:hover,
+.btn-brand:focus {
+    background: #0b5d57;
+    border-color: #0b5d57;
+    color: #fff;
+}
+
+.metric {
+    border-left: 4px solid #d44c4c;
+}
+
+.table thead th {
+    background: #f1f5f8;
+    color: #536775;
+    font-size: .73rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.status {
+    font-size: .75rem;
+    font-weight: 700;
+    padding: .4rem .58rem;
+}
+
+#calendar {
+    min-height: 650px;
+    padding: 1rem;
+}
+
+.fc .fc-button-primary {
+    background: var(--brand);
+    border-color: var(--brand);
+}
+
+.fc .fc-button-primary:hover,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+    background: var(--brand-dark);
+    border-color: var(--brand-dark);
+}
+
+.fc .fc-toolbar-title {
+    color: var(--brand-dark);
+    font-size: 1.2rem;
+    font-weight: 700;
+}

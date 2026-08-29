@@ -26,6 +26,21 @@ if ($chamado_id <= 0) {
     exit;
 }
 
+$stmtProject = $conn->prepare('SELECT obra_id FROM chamados WHERE id = ? LIMIT 1');
+if (!$stmtProject) {
+    http_response_code(500);
+    exit('Não foi possível validar o chamado.');
+}
+$stmtProject->bind_param('i', $chamado_id);
+$stmtProject->execute();
+$call = $stmtProject->get_result()->fetch_assoc();
+$stmtProject->close();
+
+if (!$call || !Auth::canAccessProject($conn, (int) $call['obra_id'])) {
+    http_response_code(403);
+    exit('Você não tem acesso a este chamado.');
+}
+
 $stmt = $conn->prepare("UPDATE chamados SET status = 'fechado', data_fechamento = NOW(), fechado_por = ? WHERE id = ?");
 if ($stmt) {
     $stmt->bind_param('ii', $user_id, $chamado_id);

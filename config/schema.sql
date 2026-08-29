@@ -140,6 +140,7 @@ CREATE TABLE IF NOT EXISTS `obra_responsaveis` (
   `usuario_id` INT NOT NULL,
   INDEX (`obra_id`),
   INDEX (`usuario_id`),
+  UNIQUE KEY `uq_obra_responsavel` (`obra_id`, `usuario_id`),
   CONSTRAINT `fk_resp_obra` FOREIGN KEY (`obra_id`) REFERENCES `obras`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_resp_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

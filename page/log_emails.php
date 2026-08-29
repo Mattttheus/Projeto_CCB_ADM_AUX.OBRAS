@@ -1,11 +1,34 @@
 <?php
-session_start();
-if (empty($_SESSION['usuario_id'])) {
-    header("Location: login.php");
-    exit;
-}
+require_once __DIR__ . '/../app/bootstrap.php';
 
-require_once("../config/conexao.php");
+use App\Core\Auth;
+use App\Core\Csrf;
+
+Auth::requireAdmin();
+
+$success = '';
+$error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        Csrf::validate($_POST['_token'] ?? null);
+        $emailId = filter_var($_POST['email_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        if (!$emailId || ($_POST['action'] ?? '') !== 'reenviar') {
+            throw new InvalidArgumentException('Solicitação de e-mail inválida.');
+        }
+        $statement = $conn->prepare("UPDATE fila_emails SET status = 'pendente', tentativas = 0, erro_mensagem = NULL, data_envio = NULL WHERE id = ? AND status = 'erro'");
+        if (!$statement) {
+            throw new RuntimeException('Não foi possível preparar o reenvio do e-mail.');
+        }
+        $statement->bind_param('i', $emailId);
+        $statement->execute();
+        $success = $statement->affected_rows > 0
+            ? 'E-mail incluído novamente na fila de envio.'
+            : 'O e-mail não está em estado de erro ou não foi encontrado.';
+        $statement->close();
+    } catch (Throwable $exception) {
+        $error = $exception->getMessage();
+    }
+}
 
 // Consultar Estatísticas da Fila
 $totais = $conn->query("SELECT 
@@ -60,6 +83,8 @@ $logFila = $conn->query("SELECT * FROM fila_emails ORDER BY id DESC LIMIT 50");
 <body class="p-4">
 
     <div class="container-fluid">
+        <?php if ($success): ?><div class="alert alert-success"><?= htmlspecialchars($success) ?></div><?php endif; ?>
+        <?php if ($error): ?><div class="alert alert-danger"><?= htmlspecialchars($error) ?></div><?php endif; ?>
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold text-dark mb-1"><i class="bi bi-mailbox2 text-primary me-2"></i> Fila de Disparo de
@@ -113,6 +138,7 @@ $logFila = $conn->query("SELECT * FROM fila_emails ORDER BY id DESC LIMIT 50");
                                 <th>Tentativas</th>
                                 <th>Data Criação</th>
                                 <th>Último Erro</th>
+                                <th class="text-end">Ação</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -132,11 +158,21 @@ $logFila = $conn->query("SELECT * FROM fila_emails ORDER BY id DESC LIMIT 50");
                                 <td><?= date('d/m/Y H:i:s', strtotime($log['data_criacao'])) ?></td>
                                 <td class="text-danger">
                                     <small><?= htmlspecialchars($log['erro_mensagem'] ?? '-') ?></small></td>
+                                <td class="text-end">
+                                    <?php if ($log['status'] === 'erro'): ?>
+                                    <form method="post" class="d-inline">
+                                        <?= Csrf::input() ?>
+                                        <input type="hidden" name="action" value="reenviar">
+                                        <input type="hidden" name="email_id" value="<?= (int) $log['id'] ?>">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Reenviar</button>
+                                    </form>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                             <?php endwhile; ?>
                             <?php else: ?>
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">Nenhum registro na fila até o
+                                <td colspan="8" class="text-center text-muted py-4">Nenhum registro na fila até o
                                     momento.</td>
                             </tr>
                             <?php endif; ?>

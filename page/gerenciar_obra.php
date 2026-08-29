@@ -1,14 +1,13 @@
 <?php
-session_start();
-if (empty($_SESSION['usuario_id'])) {
-    header("Location: login.php");
-    exit;
-}
-
 require_once __DIR__ . '/../app/bootstrap.php';
+
+\App\Core\Auth::requireUser();
 
 $erro = '';
 $sucesso = '';
+$user_id = (int) $_SESSION['usuario_id'];
+$user_role = strtolower((string) ($_SESSION['role'] ?? $_SESSION['tipo'] ?? 'user'));
+$has_full_project_access = \App\Core\Auth::hasFullProjectAccess();
 
 if (!empty($_SESSION['erro'])) {
     $erro = $_SESSION['erro'];
@@ -23,7 +22,7 @@ if (isset($_GET['del_doc'])) {
     $del_doc_id = (int)$_GET['del_doc'];
     $redirectObraId = isset($_GET['obra_id']) ? (int)$_GET['obra_id'] : 0;
     if ($del_doc_id > 0) {
-        $stmtDel = $conn->prepare("SELECT caminho_arquivo FROM documentos_obras WHERE id = ? LIMIT 1");
+        $stmtDel = $conn->prepare("SELECT obra_id, caminho_arquivo FROM documentos_obras WHERE id = ? LIMIT 1");
         if ($stmtDel) {
             $stmtDel->bind_param("i", $del_doc_id);
             $stmtDel->execute();
@@ -31,7 +30,13 @@ if (isset($_GET['del_doc'])) {
             $docToDelete = $resDel ? $resDel->fetch_assoc() : null;
             $stmtDel->close();
 
-            if ($docToDelete && !empty($docToDelete['caminho_arquivo'])) {
+            if (!$docToDelete || !\App\Core\Auth::canAccessProject($conn, (int) $docToDelete['obra_id'])) {
+                $_SESSION['erro'] = 'Você não tem acesso a esta obra.';
+                header('Location: gerenciar_obra.php');
+                exit;
+            }
+
+            if (!empty($docToDelete['caminho_arquivo'])) {
                 $arquivoPath = realpath(__DIR__ . '/../' . $docToDelete['caminho_arquivo']);
                 $baseDir = realpath(__DIR__ . '/../uploads');
                 if ($arquivoPath && $baseDir && strpos($arquivoPath, $baseDir) === 0 && file_exists($arquivoPath)) {
@@ -63,7 +68,9 @@ if (isset($_GET['del_doc'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'criar_obra') {
     $nome_obra = trim($_POST['nome_obra'] ?? '');
 
-    if ($nome_obra === '') {
+    if (!$has_full_project_access) {
+        $erro = 'Apenas administrador ou suporte podem criar obras.';
+    } elseif ($nome_obra === '') {
         $erro = "Nome da obra é obrigatório.";
     } else {
         $stmtIns = $conn->prepare("INSERT INTO obras (nome) VALUES (?)");
@@ -92,10 +99,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $titulo = trim($_POST['titulo_chamado'] ?? '');
     $prioridade = trim($_POST['prioridade_chamado'] ?? 'verde');
     $descricao = trim($_POST['descricao_chamado'] ?? '');
-    $user_id = (int)$_SESSION['usuario_id'];
 
     if ($titulo === '' || $descricao === '' || $obra_id_chamado === 0) {
         $erro = "Todos os campos do chamado são obrigatórios.";
+    } elseif (!\App\Core\Auth::canAccessProject($conn, $obra_id_chamado)) {
+        $erro = 'Você não tem acesso a esta obra.';
     } else {
         $stmtChamado = $conn->prepare("INSERT INTO chamados (obra_id, usuario_id, titulo, prioridade, descricao, status, data_abertura) VALUES (?, ?, ?, ?, ?, 'aberto', NOW())");
         if ($stmtChamado) {
@@ -120,9 +128,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'fechar_chamado') {
     $chamado_id = isset($_POST['chamado_id']) ? (int)$_POST['chamado_id'] : 0;
     if ($chamado_id > 0) {
-        $user_id = isset($_SESSION['usuario_id']) ? (int)$_SESSION['usuario_id'] : 0;
-        $stmtClose = $conn->prepare("UPDATE chamados SET status = 'fechado', data_fechamento = NOW(), fechado_por = ? WHERE id = ?");
-        if ($stmtClose) {
+        $stmtCall = $conn->prepare('SELECT obra_id FROM chamados WHERE id = ? LIMIT 1');
+        $stmtCall->bind_param('i', $chamado_id);
+        $stmtCall->execute();
+        $call = $stmtCall->get_result()->fetch_assoc();
+        $stmtCall->close();
+
+        if (!$call || !\App\Core\Auth::canAccessProject($conn, (int) $call['obra_id'])) {
+            $erro = 'Você não tem acesso a este chamado.';
+        } else {
+            $stmtClose = $conn->prepare("UPDATE chamados SET status = 'fechado', data_fechamento = NOW(), fechado_por = ? WHERE id = ?");
+            if ($stmtClose) {
             $stmtClose->bind_param('ii', $user_id, $chamado_id);
             if ($stmtClose->execute()) {
                 $stmtClose->close();
@@ -136,26 +152,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         } else {
             $erro = 'Erro no banco ao preparar fechamento: ' . $conn->error;
         }
+        }
     }
 }
 
 // ==========================================
 // PERMISSÕES & DADOS DA SESSÃO
 // ==========================================
-$user_role = $_SESSION['tipo'] ?? $_SESSION['role'] ?? 'user'; 
 $user_nome = $_SESSION['usuario_nome'] ?? 'Usuário';
 
 $can_delete_docs   = ($user_role === 'admin');
 $can_delete_tasks  = ($user_role === 'admin');
-$can_add_docs      = in_array($user_role, ['admin', 'engenheiro']);
-$can_add_tasks     = in_array($user_role, ['admin', 'engenheiro']);
-$can_edit_status   = in_array($user_role, ['admin', 'engenheiro', 'mestre_obras', 'user']);
+$can_add_docs      = in_array($user_role, ['admin', 'suporte', 'engenheiro']);
+$can_add_tasks     = in_array($user_role, ['admin', 'suporte', 'engenheiro']);
+$can_edit_status   = in_array($user_role, ['admin', 'suporte', 'engenheiro', 'mestre_obras', 'user']);
 
 // ==========================================
 // SELEÇÃO DA OBRA
 // ==========================================
 $obra_id = isset($_GET['obra_id']) ? (int)$_GET['obra_id'] : 0;
-$todasObras = $conn->query("SELECT id, nome FROM obras ORDER BY nome ASC");
+if ($has_full_project_access) {
+    $todasObras = $conn->query("SELECT id, nome FROM obras ORDER BY nome ASC");
+} else {
+    $stmtObras = $conn->prepare(
+        "SELECT DISTINCT o.id, o.nome FROM obras o INNER JOIN obra_responsaveis r ON r.obra_id = o.id WHERE r.usuario_id = ? ORDER BY o.nome ASC"
+    );
+    $stmtObras->bind_param('i', $user_id);
+    $stmtObras->execute();
+    $todasObras = $stmtObras->get_result();
+}
 
 if ($obra_id === 0 && $todasObras && $todasObras->num_rows > 0) {
     $primeiraObra = $todasObras->fetch_assoc();
@@ -165,15 +190,26 @@ if ($obra_id === 0 && $todasObras && $todasObras->num_rows > 0) {
 
 // Obter dados da obra selecionada
 $obraAtual = null;
-$stmtObra = $conn->prepare("SELECT * FROM obras WHERE id = ?");
+$stmtObra = $has_full_project_access
+    ? $conn->prepare("SELECT * FROM obras WHERE id = ?")
+    : $conn->prepare("SELECT o.* FROM obras o INNER JOIN obra_responsaveis r ON r.obra_id = o.id WHERE o.id = ? AND r.usuario_id = ? LIMIT 1");
 if ($stmtObra) {
-    $stmtObra->bind_param("i", $obra_id);
+    if ($has_full_project_access) {
+        $stmtObra->bind_param("i", $obra_id);
+    } else {
+        $stmtObra->bind_param("ii", $obra_id, $user_id);
+    }
     $stmtObra->execute();
     $resObra = $stmtObra->get_result();
     $obraAtual = $resObra ? $resObra->fetch_assoc() : null;
     $stmtObra->close();
 } else {
     error_log('prepare SELECT obras failed: ' . $conn->error);
+}
+
+if ($obra_id > 0 && !$obraAtual) {
+    http_response_code(403);
+    exit('Acesso negado a esta obra.');
 }
 
 // Consultas seguras com Prepared Statements para evitar SQL Injection
@@ -192,7 +228,16 @@ $fprioridade = isset($_GET['fprioridade']) ? $_GET['fprioridade'] : '';
 
 // Totais por prioridade (todos os chamados abertos)
 $countsAll = ['vermelho' => 0, 'amarelo' => 0, 'verde' => 0];
-$resCounts = $conn->query("SELECT prioridade, COUNT(*) as cnt FROM chamados WHERE status != 'fechado' GROUP BY prioridade");
+$countsSql = "SELECT c.prioridade, COUNT(*) as cnt FROM chamados c";
+if (!$has_full_project_access) {
+    $countsSql .= " INNER JOIN obra_responsaveis r ON r.obra_id = c.obra_id WHERE r.usuario_id = ? AND c.status != 'fechado' GROUP BY c.prioridade";
+    $stmtCounts = $conn->prepare($countsSql);
+    $stmtCounts->bind_param('i', $user_id);
+    $stmtCounts->execute();
+    $resCounts = $stmtCounts->get_result();
+} else {
+    $resCounts = $conn->query($countsSql . " WHERE c.status != 'fechado' GROUP BY c.prioridade");
+}
 if ($resCounts) {
     while ($r = $resCounts->fetch_assoc()) {
         $p = $r['prioridade'];
@@ -226,7 +271,16 @@ if ($fprioridade && in_array($fprioridade, $allowed, true)) {
     $whereFilter .= " AND c.prioridade = '" . $fprioEsc . "'";
 }
 
-$resChamadosTodas = $conn->query("SELECT c.*, o.nome as obra_nome FROM chamados c LEFT JOIN obras o ON c.obra_id = o.id WHERE " . $whereFilter . " ORDER BY o.nome ASC, CASE WHEN c.prioridade='vermelho' THEN 1 WHEN c.prioridade='amarelo' THEN 2 ELSE 3 END, c.data_abertura DESC");
+$callsSql = "SELECT c.*, o.nome as obra_nome FROM chamados c LEFT JOIN obras o ON c.obra_id = o.id";
+if (!$has_full_project_access) {
+    $callsSql .= " INNER JOIN obra_responsaveis r ON r.obra_id = c.obra_id WHERE r.usuario_id = ? AND " . $whereFilter;
+    $stmtCalls = $conn->prepare($callsSql . " ORDER BY o.nome ASC, CASE WHEN c.prioridade='vermelho' THEN 1 WHEN c.prioridade='amarelo' THEN 2 ELSE 3 END, c.data_abertura DESC");
+    $stmtCalls->bind_param('i', $user_id);
+    $stmtCalls->execute();
+    $resChamadosTodas = $stmtCalls->get_result();
+} else {
+    $resChamadosTodas = $conn->query($callsSql . " WHERE " . $whereFilter . " ORDER BY o.nome ASC, CASE WHEN c.prioridade='vermelho' THEN 1 WHEN c.prioridade='amarelo' THEN 2 ELSE 3 END, c.data_abertura DESC");
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -366,6 +420,7 @@ $resChamadosTodas = $conn->query("SELECT c.*, o.nome as obra_nome FROM chamados 
                 </div>
             </form>
 
+            <?php if ($has_full_project_access): ?>
             <div class="d-flex align-items-center">
                 <button class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="collapse"
                     data-bs-target="#collapseCriarObra" type="button">+ Nova Obra</button>
@@ -378,6 +433,7 @@ $resChamadosTodas = $conn->query("SELECT c.*, o.nome as obra_nome FROM chamados 
                     <button type="submit" class="btn btn-primary btn-sm">Criar</button>
                 </form>
             </div>
+            <?php endif; ?>
         </div>
 
         <!-- ÁREA DO USUÁRIO -->
@@ -434,6 +490,11 @@ $resChamadosTodas = $conn->query("SELECT c.*, o.nome as obra_nome FROM chamados 
             <div class="col-md-5 text-md-end mt-3 mt-md-0">
                 <a href="dashboard.php" class="btn btn-outline-secondary btn-sm rounded-pill px-3 me-2"><i
                         class="bi bi-arrow-left me-1"></i> Voltar ao Painel</a>
+                <?php if (!empty($obraAtual['id'])): ?>
+                <a href="financeiro.php?obra_id=<?= (int) $obraAtual['id'] ?>"
+                    class="btn btn-outline-success btn-sm rounded-pill px-3 me-2"><i
+                        class="bi bi-cash-stack me-1"></i> Financeiro</a>
+                <?php endif; ?>
                 <?php if ($can_add_docs): ?>
                 <button class="btn btn-primary btn-sm rounded-pill px-3" data-bs-toggle="collapse"
                     data-bs-target="#formUploadDoc"><i class="bi bi-cloud-upload me-1"></i> Novo Anexo</button>
@@ -477,7 +538,7 @@ $resChamadosTodas = $conn->query("SELECT c.*, o.nome as obra_nome FROM chamados 
         <div class="row g-4">
 
             <!-- COLUNA 1: DOCUMENTOS -->
-            <div class="col-lg-6">
+            <div class="col-lg-6" id="atividades">
                 <div class="card card-custom h-100">
                     <div class="card-header-custom d-flex justify-content-between align-items-center">
                         <span class="text-dark"><i class="bi bi-folder2-open text-primary me-2"></i> Documentos e
@@ -625,7 +686,7 @@ $resChamadosTodas = $conn->query("SELECT c.*, o.nome as obra_nome FROM chamados 
         </div>
 
         <!-- CARD DE CHAMADOS E OCORRÊNCIAS (MODERNO) -->
-        <div class="card card-custom mt-4">
+        <div class="card card-custom mt-4" id="chamados">
             <div class="card-header-custom d-flex justify-content-between align-items-center">
                 <span class="text-dark fw-bold">
                     <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i> Ocorrências & Chamados (Farol)

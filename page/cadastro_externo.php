@@ -79,19 +79,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?= Csrf::input() ?>
                             <div class="mb-3">
                                 <label class="form-label">Nome Completo</label>
-                                <input type="text" name="nome" value="<?= htmlspecialchars($nome) ?>" class="form-control" required>
+                                <input type="text" name="nome" value="<?= htmlspecialchars($nome) ?>"
+                                    class="form-control" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">E-mail</label>
-                                <input type="email" name="email" value="<?= htmlspecialchars($email) ?>" class="form-control" required>
+                                <input type="email" name="email" value="<?= htmlspecialchars($email) ?>"
+                                    class="form-control" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Tipo de usuário</label>
                                 <select name="tipo" class="form-select" required>
                                     <option value="user" <?= $tipo === 'user' ? 'selected' : '' ?>>Usuário</option>
-                                    <option value="engenheiro" <?= $tipo === 'engenheiro' ? 'selected' : '' ?>>Engenheiro</option>
-                                    <option value="mestre_obras" <?= $tipo === 'mestre_obras' ? 'selected' : '' ?>>Mestre de Obras</option>
-                                    <option value="admin" <?= $tipo === 'admin' ? 'selected' : '' ?>>Administrador</option>
+                                    <option value="engenheiro" <?= $tipo === 'engenheiro' ? 'selected' : '' ?>>
+                                        Engenheiro</option>
+                                    <option value="mestre_obras" <?= $tipo === 'mestre_obras' ? 'selected' : '' ?>>
+                                        Mestre de Obras</option>
+                                    <option value="admin" <?= $tipo === 'admin' ? 'selected' : '' ?>>Administrador
+                                    </option>
                                 </select>
                             </div>
                             <div class="mb-3">

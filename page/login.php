@@ -7,33 +7,33 @@ $erro = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-    Csrf::validate($_POST['_token'] ?? null);
-    $email = trim($_POST['email'] ?? ''); //[cite: 5]
-    $senha = $_POST['senha'] ?? ''; //[cite: 5]
+        Csrf::validate($_POST['_token'] ?? null);
+        $email = trim($_POST['email'] ?? '');
+        $senha = $_POST['senha'] ?? '';
 
-    if (empty($email) || empty($senha)) { //[cite: 5]
-        $erro = "Preencha todos os campos."; //[cite: 5]
-    } else {
-        $stmt = $conn->prepare("SELECT * FROM usuarios WHERE email = ?"); //[cite: 5]
-        $stmt->bind_param("s", $email); //[cite: 5]
-        $stmt->execute(); //[cite: 5]
-        $usuario = $stmt->get_result()->fetch_assoc(); //[cite: 5]
-
-        if ($usuario && password_verify($senha, $usuario['senha'])) { //[cite: 5]
-            session_regenerate_id(true); //[cite: 5]
-            $_SESSION['usuario_id']   = $usuario['id']; //[cite: 5]
-            $_SESSION['usuario']      = $usuario['nome']; //[cite: 2, 5]
-            $_SESSION['usuario_nome'] = $usuario['nome'];
-            $_SESSION['empresa_id']   = $usuario['empresa_id']; //[cite: 5]
-            $_SESSION['tipo']         = $usuario['tipo']; //[cite: 5]
-            $_SESSION['role']         = $usuario['role'] ?? $usuario['tipo'];
-
-            header("Location: dashboard.php"); //[cite: 5]
-            exit;
+        if (empty($email) || empty($senha)) {
+            $erro = "Preencha todos os campos.";
         } else {
-            $erro = "E-mail ou senha inválidos."; //[cite: 5]
+            // Consulta no padrão PDO
+            $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = :email");
+            $stmt->execute([':email' => $email]);
+            $usuario = $stmt->fetch();
+
+            if ($usuario && password_verify($senha, $usuario['senha'])) {
+                session_regenerate_id(true);
+                $_SESSION['usuario_id']   = $usuario['id'];
+                $_SESSION['usuario']      = $usuario['nome'];
+                $_SESSION['usuario_nome'] = $usuario['nome'];
+                $_SESSION['empresa_id']   = $usuario['empresa_id'];
+                $_SESSION['tipo']         = $usuario['tipo'];
+                $_SESSION['role']         = $usuario['role'] ?? $usuario['tipo'];
+
+                header("Location: dashboard.php");
+                exit;
+            } else {
+                $erro = "E-mail ou senha inválidos.";
+            }
         }
-    }
     } catch (Throwable $exception) {
         $erro = $exception->getMessage();
     }

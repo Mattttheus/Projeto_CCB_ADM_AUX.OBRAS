@@ -1,24 +1,28 @@
 <?php
-session_start();
-require_once("../config/conexao.php");
+require_once __DIR__ . '/../app/bootstrap.php';
 
-if (empty($_SESSION['usuario_id'])) {
-    header('Location: login.php');
-    exit;
-}
+use App\Core\Auth;
+use App\Core\Csrf;
+
+Auth::requireUser();
 
 $user_id = (int)$_SESSION['usuario_id'];
 $user_role = strtolower($_SESSION['tipo'] ?? $_SESSION['role'] ?? 'comum');
 $error = '';
 $success = '';
 
-// Permissões Administrativas Plenas (Admin e Suporte)
-$tem_acesso_gerenciamento = ($user_role === 'admin' || $user_role === 'suporte');
+// Apenas o administrador pode criar, alterar ou remover usuários e seus níveis.
+$tem_acesso_gerenciamento = ($user_role === 'admin');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        Csrf::validate($_POST['_token'] ?? null);
+    } catch (Throwable $exception) {
+        $error = $exception->getMessage();
+    }
 
     // Processamento da Abertura de Chamado na própria página
-    if (isset($_POST['abrir_chamado_direto'])) {
+    if ($error === '' && isset($_POST['abrir_chamado_direto'])) {
         $titulo_chamado = trim($_POST['titulo_chamado'] ?? '');
         $descricao_chamado = trim($_POST['descricao_chamado'] ?? '');
 
@@ -41,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // 1. Ação para cadastrar Matheus Vinicius automaticamente como Suporte
-    if (isset($_POST['cadastrar_matheus_suporte']) && $tem_acesso_gerenciamento) {
+    if ($error === '' && isset($_POST['cadastrar_matheus_suporte']) && $tem_acesso_gerenciamento) {
         $nome_matheus = "Matheus Vinicius";
         $email_matheus = "matheus.suporte@auxiliarobras.com.br";
         $senha_padrao = password_hash("Mudar@123", PASSWORD_DEFAULT);
@@ -85,7 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // 2. Ação de Cadastro de Novo Usuário Manual
-    if (isset($_POST['novo_usuario_manual']) && $tem_acesso_gerenciamento) {
+    if ($error === '' && isset($_POST['novo_usuario_manual']) && $tem_acesso_gerenciamento) {
         $n_nome = trim($_POST['n_nome'] ?? '');
         $n_email = filter_var(trim($_POST['n_email'] ?? ''), FILTER_VALIDATE_EMAIL);
         $n_perfil = trim($_POST['n_perfil'] ?? 'comum');
@@ -126,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // 3. Ação de Alteração/Edição de Usuário (Corrigido com Fallback de colunas)
-    if (isset($_POST['editar_usuario_sistema']) && $tem_acesso_gerenciamento) {
+    if ($error === '' && isset($_POST['editar_usuario_sistema']) && $tem_acesso_gerenciamento) {
         $edit_id = (int)($_POST['edit_id'] ?? 0);
         $edit_nome = trim($_POST['edit_nome'] ?? '');
         $edit_email = filter_var(trim($_POST['edit_email'] ?? ''), FILTER_VALIDATE_EMAIL);
@@ -164,8 +168,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Apenas o administrador define os responsáveis pelas obras.
+    if ($error === '' && ($_POST['acao_responsavel'] ?? '') === 'vincular' && $user_role === 'admin') {
+        $obraId = (int) ($_POST['obra_id'] ?? 0);
+        $responsavelId = (int) ($_POST['responsavel_id'] ?? 0);
+        $statement = $conn->prepare(
+            'INSERT INTO obra_responsaveis (obra_id, usuario_id) SELECT ?, u.id FROM usuarios u WHERE u.id = ? AND COALESCE(u.role, u.tipo) NOT IN (\'admin\', \'suporte\') AND NOT EXISTS (SELECT 1 FROM obra_responsaveis r WHERE r.obra_id = ? AND r.usuario_id = u.id)'
+        );
+        if ($obraId < 1 || $responsavelId < 1 || !$statement) {
+            $error = 'Selecione uma obra e um usuário válido.';
+        } else {
+            $statement->bind_param('iii', $obraId, $responsavelId, $obraId);
+            $statement->execute();
+            $success = $statement->affected_rows > 0
+                ? 'Responsável vinculado à obra com sucesso.'
+                : 'O usuário já possui acesso a esta obra ou não pode ser vinculado.';
+            $statement->close();
+        }
+    }
+
+    if ($error === '' && ($_POST['acao_responsavel'] ?? '') === 'remover' && $user_role === 'admin') {
+        $obraId = (int) ($_POST['obra_id'] ?? 0);
+        $responsavelId = (int) ($_POST['responsavel_id'] ?? 0);
+        $statement = $conn->prepare('DELETE FROM obra_responsaveis WHERE obra_id = ? AND usuario_id = ?');
+        if ($obraId < 1 || $responsavelId < 1 || !$statement) {
+            $error = 'Vínculo de responsável inválido.';
+        } else {
+            $statement->bind_param('ii', $obraId, $responsavelId);
+            $statement->execute();
+            $success = 'Acesso do responsável removido da obra.';
+            $statement->close();
+        }
+    }
+
     // 4. Ação de Remoção/Exclusão de Usuário
-    if (isset($_POST['remover_usuario_sistema']) && $tem_acesso_gerenciamento) {
+    if ($error === '' && isset($_POST['remover_usuario_sistema']) && $tem_acesso_gerenciamento) {
         $remove_id = (int)($_POST['remove_id'] ?? 0);
         if ($remove_id === $user_id) {
             $error = 'Você não pode excluir sua própria conta.';
@@ -181,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // 5. Upload Rápido de Documento
-    if (isset($_POST['upload_documento'])) {
+    if ($error === '' && isset($_POST['upload_documento'])) {
         if (isset($_FILES['arquivo_documento']) && $_FILES['arquivo_documento']['error'] === UPLOAD_ERR_OK) {
             $nome_arquivo = $_FILES['arquivo_documento']['name'];
             $tmp_name = $_FILES['arquivo_documento']['tmp_name'];
@@ -199,7 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // 6. Atualização de Perfil Próprio
-    if (isset($_POST['update_profile'])) {
+    if ($error === '' && isset($_POST['update_profile'])) {
         $nome = trim($_POST['nome'] ?? '');
         $email = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
         if (!$email || empty($nome)) {
@@ -215,7 +252,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // 7. Reset/Troca forçada de senhas
-    if (isset($_POST['reset_user_password']) && $tem_acesso_gerenciamento) {
+    if ($error === '' && isset($_POST['reset_user_password']) && $tem_acesso_gerenciamento) {
         $target_user_id = (int)($_POST['target_user_id'] ?? 0);
         $forced_password = $_POST['nova_senha_forcada'] ?? '';
         if ($target_user_id > 0 && !empty($forced_password)) {
@@ -227,7 +264,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // 8. Enfileira lembrete para o usuário que possui chamados pendentes
-    if (isset($_POST['enviar_lembrete_chamados']) && $tem_acesso_gerenciamento) {
+    if ($error === '' && isset($_POST['enviar_lembrete_chamados']) && $tem_acesso_gerenciamento) {
         $targetUserId = (int) ($_POST['target_user_id'] ?? 0);
         $stmtPending = $conn->prepare("SELECT u.nome, u.email, c.id, c.titulo, c.prioridade, c.data_abertura FROM usuarios u INNER JOIN chamados c ON c.usuario_id = u.id WHERE u.id = ? AND c.status NOT IN ('resolvido', 'fechado') ORDER BY c.data_abertura ASC");
         if ($targetUserId < 1 || !$stmtPending) {
@@ -278,6 +315,13 @@ if ($tem_acesso_gerenciamento) {
         FROM usuarios u LEFT JOIN chamados c ON c.usuario_id = u.id
         GROUP BY u.id, u.nome, u.email, u.role, u.tipo ORDER BY u.nome ASC");
 }
+
+$obrasComResponsaveis = null;
+$usuariosResponsaveis = null;
+if ($user_role === 'admin') {
+    $obrasComResponsaveis = $conn->query("SELECT o.id, o.nome, GROUP_CONCAT(u.nome ORDER BY u.nome SEPARATOR ', ') AS responsaveis FROM obras o LEFT JOIN obra_responsaveis r ON r.obra_id = o.id LEFT JOIN usuarios u ON u.id = r.usuario_id GROUP BY o.id, o.nome ORDER BY o.nome ASC");
+    $usuariosResponsaveis = $conn->query("SELECT id, nome FROM usuarios WHERE COALESCE(role, tipo) NOT IN ('admin', 'suporte') ORDER BY nome ASC");
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -296,6 +340,9 @@ if ($tem_acesso_gerenciamento) {
                 <span class="fs-4 fw-bold text-primary">Auxiliar Obras</span>
                 <span class="badge bg-secondary text-uppercase"><?= htmlspecialchars($user_role) ?></span>
             </div>
+            <?php if ($tem_acesso_gerenciamento): ?>
+            <a href="log_emails.php" class="btn btn-outline-secondary d-flex align-items-center gap-2">Gerenciar e-mails</a>
+            <?php endif; ?>
             <a href="dashboard.php" class="btn btn-outline-primary d-flex align-items-center gap-2">Voltar ao
                 Dashboard</a>
         </div>
@@ -315,6 +362,7 @@ if ($tem_acesso_gerenciamento) {
                     <div class="card-body">
                         <h4 class="card-title mb-4">Meu Perfil</h4>
                         <form method="POST">
+                            <?= Csrf::input() ?>
                             <input type="hidden" name="update_profile" value="1">
                             <div class="mb-3">
                                 <label class="form-label">Nome</label>
@@ -347,9 +395,9 @@ if ($tem_acesso_gerenciamento) {
                             <?php endif; ?>
 
                             <?php if (in_array($user_role, ['operador', 'engenheiro', 'mestre_obras', 'admin', 'suporte'], true)): ?>
-                            <a href="chamados.php?filtro=pendentes" class="btn btn-outline-success">Resolução de
+                            <a href="gerenciar_obra.php#chamados" class="btn btn-outline-success">Resolução de
                                 Chamados</a>
-                            <a href="atividades.php?acao=novo" class="btn btn-outline-info">Lançamento de Atividades</a>
+                            <a href="gerenciar_obra.php#atividades" class="btn btn-outline-info">Lançamento de Atividades</a>
                             <?php endif; ?>
 
                             <?php if ($tem_acesso_gerenciamento): ?>
@@ -363,6 +411,7 @@ if ($tem_acesso_gerenciamento) {
                             <div class="card card-body bg-light border">
                                 <h6>Abrir Novo Chamado</h6>
                                 <form method="POST">
+                                    <?= Csrf::input() ?>
                                     <input type="hidden" name="abrir_chamado_direto" value="1">
                                     <div class="mb-2">
                                         <input type="text" name="titulo_chamado" class="form-control form-control-sm"
@@ -381,6 +430,7 @@ if ($tem_acesso_gerenciamento) {
                         <div class="collapse mt-3" id="boxUpload">
                             <div class="card card-body bg-light border">
                                 <form method="POST" enctype="multipart/form-data">
+                                    <?= Csrf::input() ?>
                                     <input type="hidden" name="upload_documento" value="1">
                                     <div class="mb-2"><label class="form-label small">Arquivo</label><input type="file"
                                             name="arquivo_documento" class="form-control form-control-sm" required>
@@ -395,6 +445,7 @@ if ($tem_acesso_gerenciamento) {
                             <div class="card card-body bg-light border">
                                 <h6>Cadastrar Novo Usuário</h6>
                                 <form method="POST">
+                                    <?= Csrf::input() ?>
                                     <input type="hidden" name="novo_usuario_manual" value="1">
                                     <div class="mb-2"><input type="text" name="n_nome"
                                             class="form-control form-control-sm" placeholder="Nome" required></div>
@@ -418,7 +469,41 @@ if ($tem_acesso_gerenciamento) {
                     </div>
                 </div>
 
-                <!-- Painel de Gerenciamento Geral (Exclusivo Admin/Suporte) -->
+                <!-- Painel de Gerenciamento Geral (Exclusivo Administrador) -->
+                <?php if ($user_role === 'admin'): ?>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title mb-4">Responsáveis por Obra</h4>
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle">
+                                <thead><tr><th>Obra</th><th>Responsáveis com acesso</th><th>Adicionar responsável</th></tr></thead>
+                                <tbody>
+                                    <?php while ($obra = $obrasComResponsaveis->fetch_assoc()): ?>
+                                    <tr>
+                                        <td class="fw-semibold"><?= htmlspecialchars($obra['nome']) ?></td>
+                                        <td><?= htmlspecialchars($obra['responsaveis'] ?? 'Nenhum responsável definido') ?></td>
+                                        <td>
+                                            <form method="POST" class="d-flex gap-2">
+                                                <?= Csrf::input() ?>
+                                                <input type="hidden" name="obra_id" value="<?= (int) $obra['id'] ?>">
+                                                <select name="responsavel_id" class="form-select form-select-sm" required>
+                                                    <option value="">Selecionar usuário</option>
+                                                    <?php $usuariosResponsaveis->data_seek(0); while ($responsavel = $usuariosResponsaveis->fetch_assoc()): ?>
+                                                    <option value="<?= (int) $responsavel['id'] ?>"><?= htmlspecialchars($responsavel['nome']) ?></option>
+                                                    <?php endwhile; ?>
+                                                </select>
+                                                <button type="submit" name="acao_responsavel" value="vincular" class="btn btn-sm btn-primary">Vincular</button>
+                                                <button type="submit" name="acao_responsavel" value="remover" class="btn btn-sm btn-outline-danger">Revogar</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    <?php endwhile; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
                 <?php if ($tem_acesso_gerenciamento): ?>
                 <div class="card shadow-sm">
                     <div class="card-body">
@@ -452,6 +537,7 @@ if ($tem_acesso_gerenciamento) {
                                         <td>
                                             <!-- Edição Integrada -->
                                             <form method="POST" class="d-inline-block me-1">
+                                                <?= Csrf::input() ?>
                                                 <input type="hidden" name="editar_usuario_sistema" value="1">
                                                 <input type="hidden" name="edit_id" value="<?= $usuario['id'] ?>">
                                                 <input type="text" name="edit_nome"
@@ -480,6 +566,7 @@ if ($tem_acesso_gerenciamento) {
 
                                             <!-- Reset de Senha -->
                                             <form method="POST" class="d-inline-block me-1">
+                                                <?= Csrf::input() ?>
                                                 <input type="hidden" name="reset_user_password" value="1">
                                                 <input type="hidden" name="target_user_id"
                                                     value="<?= $usuario['id'] ?>">
@@ -491,6 +578,7 @@ if ($tem_acesso_gerenciamento) {
 
                                             <?php if ((int) $usuario['chamados_abertos'] > 0): ?>
                                             <form method="POST" class="d-inline-block me-1" onsubmit="return confirm('Enviar lembrete de chamados pendentes para este usuário?');">
+                                                <?= Csrf::input() ?>
                                                 <input type="hidden" name="enviar_lembrete_chamados" value="1">
                                                 <input type="hidden" name="target_user_id" value="<?= (int) $usuario['id'] ?>">
                                                 <button type="submit" class="btn btn-sm btn-outline-primary" title="Enviar lembrete por e-mail"><i class="bi bi-envelope"></i> Lembrar</button>
@@ -500,6 +588,7 @@ if ($tem_acesso_gerenciamento) {
                                             <!-- Remoção / Exclusão -->
                                             <form method="POST" class="d-inline-block"
                                                 onsubmit="return confirm('Tem certeza absoluta que deseja REMOVER este usuário?');">
+                                                <?= Csrf::input() ?>
                                                 <input type="hidden" name="remover_usuario_sistema" value="1">
                                                 <input type="hidden" name="remove_id" value="<?= $usuario['id'] ?>">
                                                 <button type="submit" class="btn btn-sm btn-danger">Remover</button>

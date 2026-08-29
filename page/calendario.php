@@ -1,17 +1,19 @@
 <?php
 declare(strict_types=1);
 
-session_start();
-if (empty($_SESSION['usuario_id'])) {
-    header('Location: login.php');
-    exit;
-}
-
 require_once __DIR__ . '/../app/bootstrap.php';
 
 use App\Application\Activity\ActivityService;
+use App\Core\Auth;
 use App\Core\Csrf;
 use App\Infrastructure\Persistence\MySqlActivityRepository;
+
+Auth::requireUser();
+
+if (!Auth::hasFullProjectAccess()) {
+    header('Location: gerenciar_obra.php');
+    exit;
+}
 
 $repository = new MySqlActivityRepository($conn);
 $service = new ActivityService($repository);

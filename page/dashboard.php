@@ -1,18 +1,19 @@
 <?php
-session_start();
-
-if (empty($_SESSION['usuario_id'])) {
-    header("Location: login.php");
-    exit;
-}
-
 require_once __DIR__ . '/../app/bootstrap.php';
+
+\App\Core\Auth::requireUser();
 if (!isset($conn) || !($conn instanceof mysqli)) {
     die('Falha na conexão: a variável $conn não foi inicializada. Verifique config/conexao.php.');
 }
 
 $user_nome = $_SESSION['usuario_nome'] ?? $_SESSION['nome'] ?? $_SESSION['usuario'] ?? 'Usuário';
 $user_role = $_SESSION['tipo'] ?? $_SESSION['role'] ?? 'user';
+
+if (!\App\Core\Auth::hasFullProjectAccess()) {
+    header('Location: gerenciar_obra.php');
+    exit;
+}
+
 $can_edit_status = in_array($user_role, ['admin','engenheiro','mestre_obras','user'], true);
 
 /*

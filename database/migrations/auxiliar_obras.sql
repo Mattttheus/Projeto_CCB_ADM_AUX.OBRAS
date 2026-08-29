@@ -185,7 +185,8 @@ CREATE TABLE IF NOT EXISTS `obra_responsaveis` (
   `usuario_id` int NOT NULL,
   PRIMARY KEY (`id`),
   KEY `obra_id` (`obra_id`),
-  KEY `usuario_id` (`usuario_id`)
+  KEY `usuario_id` (`usuario_id`),
+  UNIQUE KEY `uq_obra_responsavel` (`obra_id`,`usuario_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
