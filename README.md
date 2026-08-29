@@ -29,7 +29,8 @@ O projeto adota uma abordagem moderna orientada a objetos em PHP, mantendo baixo
 
 ### Domain-Driven Design (DDD)
 
-* **Linguagem Ubíqua:** Toda a estrutura de pastas, classes e tabelas reflete o domínio real de gestão de obras (Receitas, Despesas, Anotações, Cronogramas).
+- **Linguagem Ubíqua:** Toda a estrutura de pastas, classes e tabelas reflete o domínio real de gestão de obras (Receitas, Despesas, Anotações, Cronogramas).
+
 - **Entidades e Valores:** A lógica central das obras e transações é encapsulada na camada de aplicação (`app/`), isolando as regras operacionais da apresentação final.
 - **Isolamento de Infraestrutura:** Persistência (`database/`), uploads (`uploads/`) e rotinas de fundo (`cron/`) funcionam como serviços de suporte ao domínio.
 
@@ -41,7 +42,8 @@ A aplicação é dividida em camadas bem definidas:
 
 ### Boas Práticas de Clean Code
 
-* **Operadores de Coalescência Nula (`??`):** Tratamento seguro contra *warnings* de variáveis indefinidas no PHP 7+.
+- **Operadores de Coalescência Nula (`??`):** Tratamento seguro contra *warnings* de variáveis indefinidas no PHP 7+.
+
 - **Prepare Statements:** Uso estrito de `PDO` com consultas preparadas para evitar *SQL Injection*.
 - **Encapsulamento e Sanitização:** Sanitização de saídas com `htmlspecialchars()` e prevenção de falsos erros no Linter/Intelephense.
 - **Nomes Expressivos:** Métodos e variáveis descritos no contexto do domínio (`$receitas`, `$despesas`, `$anotacoes`).
@@ -106,3 +108,9 @@ Exemplo de agendamento Linux:
 ```cron
 * * * * * /usr/bin/php /caminho/do/projeto/cron/processar_fila.php >/dev/null 2>&1
 ```
+
+### Railway ou Render
+
+Este repositorio inclui `Dockerfile`, portanto ambas as plataformas podem criar o servico web diretamente a partir da branch `main`. No Railway, adicione um servico MySQL e defina as variaveis do servico PHP usando referencias `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER` e `MYSQLPASSWORD`. No Render, crie um banco MySQL externo e informe os mesmos valores como `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` e `DB_PASSWORD`.
+
+Em ambas as plataformas, configure tambem `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD` e `MAIL_FROM_EMAIL`. Depois do primeiro deploy, importe `config/schema.sql` no banco provisionado. Crie um segundo servico agendado para executar `php cron/processar_fila.php` a cada minuto.

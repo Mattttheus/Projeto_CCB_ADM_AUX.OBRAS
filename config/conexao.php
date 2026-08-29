@@ -38,17 +38,19 @@ $is_local = (
 
 if ($is_local) {
 
-    $host   = getenv('DB_HOST') ?: 'localhost';
-    $dbname = getenv('DB_NAME') ?: 'auxiliar_obras';
-    $user   = getenv('DB_USER') ?: 'root';
-    $pass   = getenv('DB_PASSWORD') ?: '';
+    $host   = getenv('DB_HOST') ?: getenv('MYSQLHOST') ?: 'localhost';
+    $dbname = getenv('DB_NAME') ?: getenv('MYSQLDATABASE') ?: 'auxiliar_obras';
+    $user   = getenv('DB_USER') ?: getenv('MYSQLUSER') ?: 'root';
+    $pass   = getenv('DB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: '';
+    $port   = (int) (getenv('DB_PORT') ?: getenv('MYSQLPORT') ?: 3306);
 
 } else {
 
-    $host   = getenv('DB_HOST') ?: '';
-    $dbname = getenv('DB_NAME') ?: '';
-    $user   = getenv('DB_USER') ?: '';
-    $pass   = getenv('DB_PASSWORD') ?: '';
+    $host   = getenv('DB_HOST') ?: getenv('MYSQLHOST') ?: '';
+    $dbname = getenv('DB_NAME') ?: getenv('MYSQLDATABASE') ?: '';
+    $user   = getenv('DB_USER') ?: getenv('MYSQLUSER') ?: '';
+    $pass   = getenv('DB_PASSWORD') ?: getenv('MYSQLPASSWORD') ?: '';
+    $port   = (int) (getenv('DB_PORT') ?: getenv('MYSQLPORT') ?: 3306);
 
 }
 
@@ -68,7 +70,7 @@ if ($host === '' || $dbname === '' || $user === '' || getenv('DB_PASSWORD') === 
 try {
 
     $pdo = new PDO(
-        "mysql:host={$host};dbname={$dbname};charset=utf8mb4",
+        "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4",
         $user,
         $pass,
         [
@@ -99,7 +101,8 @@ $conn = new mysqli(
     $host,
     $user,
     $pass,
-    $dbname
+    $dbname,
+    $port
 );
 
 

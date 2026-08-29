@@ -1,0 +1,7 @@
+.env
+.git
+.github
+vendor
+uploads
+cron/*.log
+*.log
