@@ -1,12 +1,9 @@
 
--- phpMyAdmin-compatible dump for auxiliar_obras
--- Import this file in phpMyAdmin or via mysql CLI
+-- phpMyAdmin-compatible schema
+-- Select the target database before importing this file.
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET FOREIGN_KEY_CHECKS = 0;
-
-CREATE DATABASE IF NOT EXISTS `auxiliar_obras` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `auxiliar_obras`;
 
 -- Drop existing tables (safe for re-import)
 DROP TABLE IF EXISTS `obra_responsaveis`;
