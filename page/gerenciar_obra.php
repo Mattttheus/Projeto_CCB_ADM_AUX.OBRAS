@@ -18,9 +18,16 @@ if (!empty($_SESSION['sucesso'])) {
     unset($_SESSION['sucesso']);
 }
 
-if (isset($_GET['del_doc'])) {
-    $del_doc_id = (int)$_GET['del_doc'];
-    $redirectObraId = isset($_GET['obra_id']) ? (int)$_GET['obra_id'] : 0;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'excluir_documento') {
+    try {
+        \App\Core\Csrf::validate($_POST['_token'] ?? null);
+    } catch (Throwable $exception) {
+        $_SESSION['erro'] = $exception->getMessage();
+        header('Location: gerenciar_obra.php');
+        exit;
+    }
+    $del_doc_id = (int) ($_POST['del_doc'] ?? 0);
+    $redirectObraId = (int) ($_POST['obra_id'] ?? 0);
     if ($del_doc_id > 0) {
         $stmtDel = $conn->prepare("SELECT obra_id, caminho_arquivo FROM documentos_obras WHERE id = ? LIMIT 1");
         if ($stmtDel) {
@@ -62,10 +69,18 @@ if (isset($_GET['del_doc'])) {
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') !== 'excluir_documento') {
+    try {
+        \App\Core\Csrf::validate($_POST['_token'] ?? null);
+    } catch (Throwable $exception) {
+        $erro = $exception->getMessage();
+    }
+}
+
 // ==========================================
 // CRIAR NOVA OBRA (processamento POST)
 // ==========================================
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'criar_obra') {
+if ($erro === '' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'criar_obra') {
     $nome_obra = trim($_POST['nome_obra'] ?? '');
 
     if (!$has_full_project_access) {
@@ -94,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // ==========================================
 // ABRIR NOVO CHAMADO (processamento POST)
 // ==========================================
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'abrir_chamado') {
+if ($erro === '' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'abrir_chamado') {
     $obra_id_chamado = isset($_POST['obra_id']) ? (int)$_POST['obra_id'] : (isset($_GET['obra_id']) ? (int)$_GET['obra_id'] : 0);
     $titulo = trim($_POST['titulo_chamado'] ?? '');
     $prioridade = trim($_POST['prioridade_chamado'] ?? 'verde');
@@ -125,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // ==========================================
 // FECHAR / DAR BAIXA EM CHAMADO (POST)
 // ==========================================
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'fechar_chamado') {
+if ($erro === '' && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'fechar_chamado') {
     $chamado_id = isset($_POST['chamado_id']) ? (int)$_POST['chamado_id'] : 0;
     if ($chamado_id > 0) {
         $stmtCall = $conn->prepare('SELECT obra_id FROM chamados WHERE id = ? LIMIT 1');
@@ -142,8 +157,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $stmtClose->bind_param('ii', $user_id, $chamado_id);
             if ($stmtClose->execute()) {
                 $stmtClose->close();
-                $redir = $_SERVER['HTTP_REFERER'] ?? 'gerenciar_obra.php';
-                header('Location: ' . $redir);
+                try {
+                    (new \App\Application\Notification\AdminNotificationService($conn))->notifyClosedCall($chamado_id);
+                } catch (Throwable $exception) {
+                    error_log('Falha ao enfileirar aviso de chamado concluído: ' . $exception->getMessage());
+                }
+                header('Location: gerenciar_obra.php?obra_id=' . (int) ($call['obra_id'] ?? 0));
                 exit;
             } else {
                 $erro = 'Falha ao fechar chamado: ' . $stmtClose->error;
@@ -427,6 +446,7 @@ if (!$has_full_project_access) {
             </div>
             <div class="collapse mt-2" id="collapseCriarObra">
                 <form method="POST" class="d-flex align-items-center gap-2 mt-2">
+                    <?= \App\Core\Csrf::input() ?>
                     <input type="hidden" name="action" value="criar_obra">
                     <input type="text" name="nome_obra" class="form-control form-control-sm" placeholder="Nome da obra"
                         required>
@@ -509,6 +529,7 @@ if (!$has_full_project_access) {
                 <form action="upload_doc.php?obra_id=<?= $obra_id ?>" method="POST" enctype="multipart/form-data"
                     class="row g-3">
                     <input type="hidden" name="_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="obra_id" value="<?= (int) $obra_id ?>">
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Nome do Arquivo</label>
                         <input type="text" name="nome_arquivo" class="form-control form-control-sm" required
@@ -582,10 +603,13 @@ if (!$has_full_project_access) {
                                                 class="btn btn-light btn-sm rounded-circle" title="Baixar"><i
                                                     class="bi bi-download"></i></a>
                                             <?php if ($can_delete_docs): ?>
-                                            <a href="?obra_id=<?=$obra_id?>&del_doc=<?=$doc['id']?>"
-                                                onclick="return confirm('Excluir este documento?')"
-                                                class="btn btn-light btn-sm text-danger rounded-circle"
-                                                title="Excluir"><i class="bi bi-trash"></i></a>
+                                            <form method="post" class="d-inline" onsubmit="return confirm('Excluir este documento?')">
+                                                <?= \App\Core\Csrf::input() ?>
+                                                <input type="hidden" name="action" value="excluir_documento">
+                                                <input type="hidden" name="obra_id" value="<?= (int) $obra_id ?>">
+                                                <input type="hidden" name="del_doc" value="<?= (int) $doc['id'] ?>">
+                                                <button type="submit" class="btn btn-light btn-sm text-danger rounded-circle" title="Excluir"><i class="bi bi-trash"></i></button>
+                                            </form>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
@@ -703,6 +727,7 @@ if (!$has_full_project_access) {
                     <div class="p-3 bg-light rounded-3 border">
                         <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-pencil-square me-1"></i> Nova Ocorrência</h6>
                         <form method="POST">
+                            <?= \App\Core\Csrf::input() ?>
                             <input type="hidden" name="action" value="abrir_chamado">
                             <input type="hidden" name="obra_id" value="<?= $obra_id ?>">
                             <div class="row g-3">
@@ -818,6 +843,7 @@ if (!$has_full_project_access) {
                                 <td class="text-end">
                                     <?php if ($ch['status'] !== 'fechado'): ?>
                                     <form method="POST" class="d-inline">
+                                        <?= \App\Core\Csrf::input() ?>
                                         <input type="hidden" name="action" value="fechar_chamado">
                                         <input type="hidden" name="chamado_id" value="<?= $ch['id'] ?>">
                                         <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-2"

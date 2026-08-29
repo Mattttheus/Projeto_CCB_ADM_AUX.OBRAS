@@ -12,10 +12,10 @@ if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
 }
 
 // Credenciais SMTP fornecidas pela Brevo
-$mail_host = 'smtp-relay.brevo.com';
-$mail_port = 587;
-$mail_user = 'b70f9f001@smtp-brevo.com';
-$mail_pass = 'SUA_CHAVE_SMTP_AQUI'; // Insira a Master Key / Chave API gerada na Brevo
+$mail_host = getenv('MAIL_HOST') ?: 'smtp-relay.brevo.com';
+$mail_port = (int) (getenv('MAIL_PORT') ?: 587);
+$mail_user = getenv('MAIL_USER') ?: '';
+$mail_pass = getenv('MAIL_PASSWORD') ?: '';
 
 /**
  * Função para disparar alerta de novos chamados/ocorrências para os responsáveis

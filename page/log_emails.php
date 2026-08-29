@@ -155,7 +155,7 @@ $logFila = $conn->query("SELECT * FROM fila_emails ORDER BY id DESC LIMIT 50");
                                 <td><span class="badge <?= $badge ?>"><?= strtoupper($log['status']) ?></span></td>
                                 <td><span class="badge bg-light text-dark border"><?= $log['tentativas'] ?>/3</span>
                                 </td>
-                                <td><?= date('d/m/Y H:i:s', strtotime($log['data_criacao'])) ?></td>
+                                <td><?= !empty($log['created_at']) ? date('d/m/Y H:i:s', strtotime($log['created_at'])) : '-' ?></td>
                                 <td class="text-danger">
                                     <small><?= htmlspecialchars($log['erro_mensagem'] ?? '-') ?></small></td>
                                 <td class="text-end">

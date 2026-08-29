@@ -8,6 +8,13 @@ $erro = "";
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         Csrf::validate($_POST['_token'] ?? null);
+        $loginAttempts = $_SESSION['login_attempts'] ?? ['count' => 0, 'expires_at' => 0];
+        if ((int) $loginAttempts['expires_at'] < time()) {
+            $loginAttempts = ['count' => 0, 'expires_at' => time() + 900];
+        }
+        if ((int) $loginAttempts['count'] >= 5) {
+            throw new RuntimeException('Muitas tentativas de acesso. Aguarde 15 minutos e tente novamente.');
+        }
         $email = trim($_POST['email'] ?? '');
         $senha = $_POST['senha'] ?? '';
 
@@ -21,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($usuario && password_verify($senha, $usuario['senha'])) {
                 session_regenerate_id(true);
+                unset($_SESSION['login_attempts']);
                 $_SESSION['usuario_id']   = $usuario['id'];
                 $_SESSION['usuario']      = $usuario['nome'];
                 $_SESSION['usuario_nome'] = $usuario['nome'];
@@ -31,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header("Location: dashboard.php");
                 exit;
             } else {
+                $_SESSION['login_attempts'] = ['count' => (int) $loginAttempts['count'] + 1, 'expires_at' => (int) $loginAttempts['expires_at']];
                 $erro = "E-mail ou senha inválidos.";
             }
         }

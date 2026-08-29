@@ -6,8 +6,8 @@ use App\Core\Csrf;
 
 Auth::requireUser();
 
-$obra_id = isset($_REQUEST['obra_id']) ? (int)$_REQUEST['obra_id'] : 0;
-$redirect = $_SERVER['HTTP_REFERER'] ?? 'gerenciar_obra.php?obra_id=' . $obra_id;
+$obra_id = isset($_POST['obra_id']) ? (int) $_POST['obra_id'] : 0;
+$redirect = 'gerenciar_obra.php?obra_id=' . $obra_id;
 
 if ($obra_id <= 0) {
     $_SESSION['erro'] = 'Obra inválida ou não encontrada.';

@@ -2,13 +2,27 @@
 require_once __DIR__ . '/../app/bootstrap.php';
 
 use App\Core\Auth;
+use App\Core\Csrf;
 
 Auth::requireAdmin();
 
-$nome = "Matheus Vinicius";
-$email = "matheus.suporte@auxiliarobras.com.br";
-$senha = password_hash("4605", PASSWORD_DEFAULT);
-$perfil = "suporte";
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    exit('Provisionamento por URL desativado. Use o gerenciamento de usuários.');
+}
+
+Csrf::validate($_POST['_token'] ?? null);
+$nome = trim((string) ($_POST['nome'] ?? ''));
+$email = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+$senhaInformada = (string) ($_POST['senha'] ?? '');
+$perfil = 'suporte';
+
+if ($nome === '' || !$email || strlen($senhaInformada) < 12) {
+    http_response_code(422);
+    exit('Informe nome, e-mail e uma senha com ao menos 12 caracteres.');
+}
+
+$senha = password_hash($senhaInformada, PASSWORD_DEFAULT);
 
 // Verifica se a tabela usa 'role' ou 'tipo' ou ambas
 $columns = [];
@@ -38,9 +52,7 @@ if ($hasRole && $hasTipo) {
 }
 
 if ($stmt->execute()) {
-    echo "<b>Usuário Suporte cadastrado/atualizado com sucesso!</b><br>";
-    echo "E-mail: " . $email . "<br>";
-    echo "Senha provisória: 4605";
+    echo '<b>Usuário de suporte cadastrado ou atualizado com sucesso.</b>';
 } else {
     echo "Erro ao cadastrar no banco: " . $conn->error;
 }

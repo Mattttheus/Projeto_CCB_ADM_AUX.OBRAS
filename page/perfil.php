@@ -93,10 +93,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $n_nome = trim($_POST['n_nome'] ?? '');
         $n_email = filter_var(trim($_POST['n_email'] ?? ''), FILTER_VALIDATE_EMAIL);
         $n_perfil = trim($_POST['n_perfil'] ?? 'comum');
-        $n_senha = password_hash($_POST['n_senha'] ?? 'Mudar@123', PASSWORD_DEFAULT);
+        $n_senha_texto = (string) ($_POST['n_senha'] ?? '');
+        $n_senha = password_hash($n_senha_texto, PASSWORD_DEFAULT);
 
-        if (!$n_email || empty($n_nome)) {
-            $error = 'Dados de cadastro inválidos.';
+        if (!$n_email || empty($n_nome) || strlen($n_senha_texto) < 12) {
+            $error = 'Informe nome, e-mail e uma senha com ao menos 12 caracteres.';
         } else {
             $stmtCheckU = $conn->prepare("SELECT id FROM usuarios WHERE email = ?");
             $stmtCheckU->bind_param('s', $n_email);
@@ -217,22 +218,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 5. Upload Rápido de Documento
+    // Uploads devem ocorrer na página da obra, onde há validação de PDF e autorização por obra.
     if ($error === '' && isset($_POST['upload_documento'])) {
-        if (isset($_FILES['arquivo_documento']) && $_FILES['arquivo_documento']['error'] === UPLOAD_ERR_OK) {
-            $nome_arquivo = $_FILES['arquivo_documento']['name'];
-            $tmp_name = $_FILES['arquivo_documento']['tmp_name'];
-            $diretorio_destino = "../uploads/";
-            if (!is_dir($diretorio_destino)) {
-                mkdir($diretorio_destino, 0777, true);
-            }
-            $caminho_final = $diretorio_destino . time() . '_' . basename($nome_arquivo);
-            if (move_uploaded_file($tmp_name, $caminho_final)) {
-                $success = "Documento enviado com sucesso!";
-            } else {
-                $error = "Falha ao salvar o arquivo no servidor.";
-            }
-        }
+        $error = 'Envie documentos pela página da obra.';
     }
 
     // 6. Atualização de Perfil Próprio
@@ -255,11 +243,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($error === '' && isset($_POST['reset_user_password']) && $tem_acesso_gerenciamento) {
         $target_user_id = (int)($_POST['target_user_id'] ?? 0);
         $forced_password = $_POST['nova_senha_forcada'] ?? '';
-        if ($target_user_id > 0 && !empty($forced_password)) {
+        if ($target_user_id > 0 && strlen($forced_password) >= 12) {
             $newHash = password_hash($forced_password, PASSWORD_DEFAULT);
             $stmtReset = $conn->prepare("UPDATE usuarios SET senha = ? WHERE id = ?");
             $stmtReset->bind_param('si', $newHash, $target_user_id);
             if ($stmtReset->execute()) $success = 'Senha redefinida com sucesso.';
+        } else {
+            $error = 'Informe uma senha com ao menos 12 caracteres.';
         }
     }
 
@@ -389,11 +379,6 @@ if ($user_role === 'admin') {
                                 data-bs-target="#boxAbrirChamado">Abrir Chamado</button>
                             <?php endif; ?>
 
-                            <?php if (in_array($user_role, ['user', 'comum', 'operador', 'engenheiro', 'mestre_obras', 'admin', 'suporte'], true)): ?>
-                            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse"
-                                data-bs-target="#boxUpload">Upload de Documentos</button>
-                            <?php endif; ?>
-
                             <?php if (in_array($user_role, ['operador', 'engenheiro', 'mestre_obras', 'admin', 'suporte'], true)): ?>
                             <a href="gerenciar_obra.php#chamados" class="btn btn-outline-success">Resolução de
                                 Chamados</a>
@@ -426,20 +411,6 @@ if ($user_role === 'admin') {
                             </div>
                         </div>
 
-                        <!-- Formulário Integrado: Upload de Documentos -->
-                        <div class="collapse mt-3" id="boxUpload">
-                            <div class="card card-body bg-light border">
-                                <form method="POST" enctype="multipart/form-data">
-                                    <?= Csrf::input() ?>
-                                    <input type="hidden" name="upload_documento" value="1">
-                                    <div class="mb-2"><label class="form-label small">Arquivo</label><input type="file"
-                                            name="arquivo_documento" class="form-control form-control-sm" required>
-                                    </div>
-                                    <button type="submit" class="btn btn-sm btn-success">Enviar Documento</button>
-                                </form>
-                            </div>
-                        </div>
-
                         <!-- Form de Cadastro Manual -->
                         <div class="collapse mt-3" id="boxNovoUsuario">
                             <div class="card card-body bg-light border">
@@ -452,7 +423,7 @@ if ($user_role === 'admin') {
                                     <div class="mb-2"><input type="email" name="n_email"
                                             class="form-control form-control-sm" placeholder="E-mail" required></div>
                                     <div class="mb-2"><input type="password" name="n_senha"
-                                            class="form-control form-control-sm" placeholder="Senha" required></div>
+                                            class="form-control form-control-sm" placeholder="Senha" minlength="12" required></div>
                                     <div class="mb-2">
                                         <select name="n_perfil" class="form-select form-select-sm">
                                             <option value="comum">Comum (Leitor)</option>
@@ -572,7 +543,7 @@ if ($user_role === 'admin') {
                                                     value="<?= $usuario['id'] ?>">
                                                 <input type="password" name="nova_senha_forcada"
                                                     class="form-control form-control-sm d-inline-block"
-                                                    style="width:100px;" placeholder="Nova Senha" required>
+                                                    style="width:100px;" placeholder="Nova Senha" minlength="12" required>
                                                 <button type="submit" class="btn btn-sm btn-secondary">Senha</button>
                                             </form>
 

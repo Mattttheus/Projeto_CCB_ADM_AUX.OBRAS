@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../app/bootstrap.php';
 
 use App\Application\Activity\ActivityService;
+use App\Application\Notification\AdminNotificationService;
 use App\Core\Auth;
 use App\Core\Csrf;
 use App\Domain\Activity\ActivityStatus;
@@ -18,6 +19,7 @@ if (!Auth::hasFullProjectAccess()) {
 
 $repository = new MySqlActivityRepository($conn);
 $service = new ActivityService($repository);
+$notifications = new AdminNotificationService($conn);
 $message = $_SESSION['flash_success'] ?? '';
 unset($_SESSION['flash_success']);
 $error = '';
@@ -31,7 +33,12 @@ try {
     }
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mudar_status') {
         Csrf::validate($_POST['_token'] ?? null);
-        $service->changeStatus((int) ($_POST['id'] ?? 0), (string) ($_POST['status'] ?? ''));
+        $activityId = (int) ($_POST['id'] ?? 0);
+        $status = (string) ($_POST['status'] ?? '');
+        $service->changeStatus($activityId, $status);
+        if ($status === ActivityStatus::COMPLETED) {
+            $notifications->notifyCompletedActivity($activityId);
+        }
         $_SESSION['flash_success'] = 'Status da atividade atualizado.';
         header('Location: obras_calendario.php');
         exit;

@@ -2,6 +2,18 @@
 
 declare(strict_types=1);
 
+$envFile = __DIR__ . '/../.env';
+if (is_file($envFile) && is_readable($envFile)) {
+    $environment = parse_ini_file($envFile, false, INI_SCANNER_RAW);
+    if (is_array($environment)) {
+        foreach ($environment as $key => $value) {
+            if (getenv($key) === false) {
+                putenv($key . '=' . $value);
+            }
+        }
+    }
+}
+
 /*
 |--------------------------------------------------------------------------
 | CONFIGURAÇÃO DO BANCO
@@ -26,18 +38,24 @@ $is_local = (
 
 if ($is_local) {
 
-    $host   = 'localhost';
-    $dbname = 'auxiliar_obras';
-    $user   = 'root';
-    $pass   = '4605';
+    $host   = getenv('DB_HOST') ?: 'localhost';
+    $dbname = getenv('DB_NAME') ?: 'auxiliar_obras';
+    $user   = getenv('DB_USER') ?: 'root';
+    $pass   = getenv('DB_PASSWORD') ?: '';
 
 } else {
 
-    $host   = 'sqlXXX.infinityfree.com';
-    $dbname = 'if0_41646147_auxiliar_obras';
-    $user   = 'if0_41646147';
-    $pass   = '4605';
+    $host   = getenv('DB_HOST') ?: '';
+    $dbname = getenv('DB_NAME') ?: '';
+    $user   = getenv('DB_USER') ?: '';
+    $pass   = getenv('DB_PASSWORD') ?: '';
 
+}
+
+if ($host === '' || $dbname === '' || $user === '' || getenv('DB_PASSWORD') === false) {
+    error_log('Configuração do banco incompleta: defina DB_HOST, DB_NAME, DB_USER e DB_PASSWORD.');
+    http_response_code(500);
+    exit('Não foi possível conectar ao banco de dados. Verifique as configurações do ambiente.');
 }
 
 
@@ -61,11 +79,9 @@ try {
     );
 
 } catch (PDOException $e) {
-
-    die(
-        'Erro na conexão PDO: '
-        . $e->getMessage()
-    );
+    error_log('Erro na conexão PDO: ' . $e->getMessage());
+    http_response_code(500);
+    exit('Não foi possível conectar ao banco de dados. Verifique as configurações do ambiente.');
 
 }
 
@@ -88,11 +104,9 @@ $conn = new mysqli(
 
 
 if ($conn->connect_errno) {
-
-    die(
-        'Erro na conexão MySQLi: '
-        . $conn->connect_error
-    );
+    error_log('Erro na conexão MySQLi: ' . $conn->connect_error);
+    http_response_code(500);
+    exit('Não foi possível conectar ao banco de dados. Verifique as configurações do ambiente.');
 
 }
 

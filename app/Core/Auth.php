@@ -6,6 +6,18 @@ namespace App\Core;
 
 final class Auth
 {
+    public static function sendSecurityHeaders(): void
+    {
+        if (headers_sent()) {
+            return;
+        }
+
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: DENY');
+        header('Referrer-Policy: strict-origin-when-cross-origin');
+        header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
+    }
+
     public static function startSession(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
@@ -24,6 +36,7 @@ final class Auth
     public static function requireUser(): void
     {
         self::startSession();
+        self::sendSecurityHeaders();
 
         if (empty($_SESSION['usuario_id'])) {
             header('Location: login.php');
@@ -35,7 +48,7 @@ final class Auth
     {
         self::requireUser();
 
-        $role = $_SESSION['role'] ?? $_SESSION['tipo'] ?? null;
+        $role = strtolower((string) ($_SESSION['role'] ?? $_SESSION['tipo'] ?? ''));
 
         if ($role !== 'admin') {
             http_response_code(403);

@@ -3,6 +3,12 @@
 require_once __DIR__ . '/../config/conexao.php';
 require_once __DIR__ . '/../config/mailer.php';
 
+if ($mail_user === '' || $mail_pass === '') {
+    error_log('Configuração SMTP incompleta: defina MAIL_USER e MAIL_PASSWORD no ambiente.');
+    $conn->query("UPDATE fila_emails SET erro_mensagem = 'Configuração SMTP incompleta. Defina MAIL_USER e MAIL_PASSWORD no arquivo .env.' WHERE status = 'pendente' AND tentativas = 0");
+    exit(1);
+}
+
 // Buscar até 20 e-mails pendentes por lote
 $sqlFila = "SELECT * FROM fila_emails WHERE status = 'pendente' AND tentativas < 3 LIMIT 20";
 $resFila = $conn->query($sqlFila);
@@ -27,7 +33,7 @@ if ($resFila && $resFila->num_rows > 0) {
             $mail->Username   = $mail_user;
             $mail->Password   = $mail_pass;
             $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-            $mail->Port       = 587;
+            $mail->Port       = $mail_port;
             $mail->CharSet    = 'UTF-8';
 
             $mail->setFrom($mail_user, 'Auxiliar Obras');

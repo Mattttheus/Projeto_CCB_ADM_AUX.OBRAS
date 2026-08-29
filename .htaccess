@@ -1,0 +1,11 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(?:app|config|cron|database|vendor)(?:/|$) - [F,L,NC]
+    RewriteRule ^(?:\.env(?:\..*)?|composer\.(?:json|lock)|.*\.(?:sql|log))$ - [F,L,NC]
+</IfModule>
+
+<FilesMatch "^(?:\.env(?:\..*)?|composer\.(?:json|lock)|.*\.(?:sql|log))$">
+    Require all denied
+</FilesMatch>

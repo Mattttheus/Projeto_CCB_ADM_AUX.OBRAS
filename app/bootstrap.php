@@ -57,3 +57,4 @@ require_once __DIR__ . '/../config/conexao.php';
 require_once __DIR__ . '/Core/Auth.php';
 
 \App\Core\Auth::startSession();
+\App\Core\Auth::sendSecurityHeaders();
