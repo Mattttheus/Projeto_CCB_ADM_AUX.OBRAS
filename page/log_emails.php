@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../app/bootstrap.php';
+require_once __DIR__ . '/../config/mailer.php';
 
 use App\Core\Auth;
 use App\Core\Csrf;
@@ -12,19 +13,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         Csrf::validate($_POST['_token'] ?? null);
         $emailId = filter_var($_POST['email_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-        if (!$emailId || ($_POST['action'] ?? '') !== 'reenviar') {
+        $action = (string) ($_POST['action'] ?? '');
+        if (!$emailId || !in_array($action, ['reenviar', 'enviar_agora'], true)) {
             throw new InvalidArgumentException('Solicitação de e-mail inválida.');
         }
-        $statement = $conn->prepare("UPDATE fila_emails SET status = 'pendente', tentativas = 0, erro_mensagem = NULL, data_envio = NULL WHERE id = ? AND status = 'erro'");
-        if (!$statement) {
-            throw new RuntimeException('Não foi possível preparar o reenvio do e-mail.');
+        if ($action === 'reenviar') {
+            $statement = $conn->prepare("UPDATE fila_emails SET status = 'pendente', tentativas = 0, erro_mensagem = NULL, data_envio = NULL WHERE id = ? AND status = 'erro'");
+            if (!$statement) {
+                throw new RuntimeException('Não foi possível preparar o reenvio do e-mail.');
+            }
+            $statement->bind_param('i', $emailId);
+            $statement->execute();
+            $success = $statement->affected_rows > 0
+                ? 'E-mail incluído novamente na fila de envio.'
+                : 'O e-mail não está em estado de erro ou não foi encontrado.';
+            $statement->close();
+        } else {
+            $statement = $conn->prepare("SELECT destinatario, assunto, mensagem_html FROM fila_emails WHERE id = ? AND status IN ('pendente', 'erro') LIMIT 1");
+            if (!$statement) {
+                throw new RuntimeException('Não foi possível localizar o e-mail na fila.');
+            }
+            $statement->bind_param('i', $emailId);
+            $statement->execute();
+            $email = $statement->get_result()->fetch_assoc();
+            $statement->close();
+            if (!$email) {
+                throw new RuntimeException('O e-mail já foi enviado ou não foi encontrado.');
+            }
+
+            try {
+                enviarEmailFila($email['destinatario'], $email['assunto'], $email['mensagem_html']);
+
+                $sent = $conn->prepare("UPDATE fila_emails SET status = 'enviado', data_envio = NOW(), erro_mensagem = NULL WHERE id = ?");
+                if (!$sent) throw new RuntimeException('Não foi possível atualizar o status do e-mail.');
+                $sent->bind_param('i', $emailId);
+                $sent->execute();
+                $sent->close();
+                $success = 'E-mail enviado com sucesso.';
+            } catch (Throwable $exception) {
+                $message = substr($exception->getMessage(), 0, 1000);
+                $failed = $conn->prepare("UPDATE fila_emails SET tentativas = tentativas + 1, erro_mensagem = ?, status = CASE WHEN tentativas + 1 >= 3 THEN 'erro' ELSE 'pendente' END WHERE id = ?");
+                if ($failed) {
+                    $failed->bind_param('si', $message, $emailId);
+                    $failed->execute();
+                    $failed->close();
+                }
+                throw new RuntimeException('Não foi possível enviar o e-mail. Verifique o último erro.');
+            }
         }
-        $statement->bind_param('i', $emailId);
-        $statement->execute();
-        $success = $statement->affected_rows > 0
-            ? 'E-mail incluído novamente na fila de envio.'
-            : 'O e-mail não está em estado de erro ou não foi encontrado.';
-        $statement->close();
     } catch (Throwable $exception) {
         $error = $exception->getMessage();
     }
@@ -155,10 +191,20 @@ $logFila = $conn->query("SELECT * FROM fila_emails ORDER BY id DESC LIMIT 50");
                                 <td><span class="badge <?= $badge ?>"><?= strtoupper($log['status']) ?></span></td>
                                 <td><span class="badge bg-light text-dark border"><?= $log['tentativas'] ?>/3</span>
                                 </td>
-                                <td><?= !empty($log['created_at']) ? date('d/m/Y H:i:s', strtotime($log['created_at'])) : '-' ?></td>
+                                <td><?= !empty($log['created_at']) ? date('d/m/Y H:i:s', strtotime($log['created_at'])) : '-' ?>
+                                </td>
                                 <td class="text-danger">
-                                    <small><?= htmlspecialchars($log['erro_mensagem'] ?? '-') ?></small></td>
+                                    <small><?= htmlspecialchars($log['erro_mensagem'] ?? '-') ?></small>
+                                </td>
                                 <td class="text-end">
+                                    <?php if (in_array($log['status'], ['pendente', 'erro'], true)): ?>
+                                    <form method="post" class="d-inline">
+                                        <?= Csrf::input() ?>
+                                        <input type="hidden" name="action" value="enviar_agora">
+                                        <input type="hidden" name="email_id" value="<?= (int) $log['id'] ?>">
+                                        <button type="submit" class="btn btn-sm btn-primary">Enviar agora</button>
+                                    </form>
+                                    <?php endif; ?>
                                     <?php if ($log['status'] === 'erro'): ?>
                                     <form method="post" class="d-inline">
                                         <?= Csrf::input() ?>

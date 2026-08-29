@@ -133,4 +133,15 @@ $conn->set_charset('utf8mb4');
 |--------------------------------------------------------------------------
 */
 
+/*
+|--------------------------------------------------------------------------
+| CONFIGURAÇÃO DO EMAIL
+|--------------------------------------------------------------------------
+*/
+
+define('MAIL_HOST', getenv('MAIL_HOST') ?: 'smtp-relay.brevo.com');
+define('MAIL_PORT', getenv('MAIL_PORT') ?: 587);
+define('MAIL_USER', getenv('MAIL_USER') ?: 'seu_login_smtp_brevo');
+define('MAIL_PASSWORD', getenv('MAIL_PASSWORD') ?: 'sua_chave_smtp_brevo');
+
 ?>

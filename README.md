@@ -5,6 +5,7 @@ Sistema web para gestão administrativa, financeira e operacional de obras da Co
 ---
 
 ## 📌 Sumário
+
 1. [Visão Geral](#-visão-geral)
 2. [Arquitetura & Diretrizes](#-arquitetura--diretrizes)
    - [Domain-Driven Design (DDD)](#domain-driven-design-ddd)
@@ -27,20 +28,23 @@ O **Auxiliar Obras** foi projetado para descentralizar e organizar a gestão de 
 O projeto adota uma abordagem moderna orientada a objetos em PHP, mantendo baixo acoplamento e alta coesão entre a lógica de negócios e as camadas de visualização e banco de dados.
 
 ### Domain-Driven Design (DDD)
+
 * **Linguagem Ubíqua:** Toda a estrutura de pastas, classes e tabelas reflete o domínio real de gestão de obras (Receitas, Despesas, Anotações, Cronogramas).
-* **Entidades e Valores:** A lógica central das obras e transações é encapsulada na camada de aplicação (`app/`), isolando as regras operacionais da apresentação final.
-* **Isolamento de Infraestrutura:** Persistência (`database/`), uploads (`uploads/`) e rotinas de fundo (`cron/`) funcionam como serviços de suporte ao domínio.
+- **Entidades e Valores:** A lógica central das obras e transações é encapsulada na camada de aplicação (`app/`), isolando as regras operacionais da apresentação final.
+- **Isolamento de Infraestrutura:** Persistência (`database/`), uploads (`uploads/`) e rotinas de fundo (`cron/`) funcionam como serviços de suporte ao domínio.
 
 ### Clean Architecture
+
 A aplicação é dividida em camadas bem definidas:
 
 1. **Presentation Layer (`page/`, `assets/`):** Views PHP, formulários, componentes visuais (CSS/JS) e dashboards.
 
-  ### Boas Práticas de Clean Code
+### Boas Práticas de Clean Code
+
 * **Operadores de Coalescência Nula (`??`):** Tratamento seguro contra *warnings* de variáveis indefinidas no PHP 7+.
-* **Prepare Statements:** Uso estrito de `PDO` com consultas preparadas para evitar *SQL Injection*.
-* **Encapsulamento e Sanitização:** Sanitização de saídas com `htmlspecialchars()` e prevenção de falsos erros no Linter/Intelephense.
-* **Nomes Expressivos:** Métodos e variáveis descritos no contexto do domínio (`$receitas`, `$despesas`, `$anotacoes`).
+- **Prepare Statements:** Uso estrito de `PDO` com consultas preparadas para evitar *SQL Injection*.
+- **Encapsulamento e Sanitização:** Sanitização de saídas com `htmlspecialchars()` e prevenção de falsos erros no Linter/Intelephense.
+- **Nomes Expressivos:** Métodos e variáveis descritos no contexto do domínio (`$receitas`, `$despesas`, `$anotacoes`).
 
 ---
 
@@ -86,3 +90,19 @@ Banco de dados MySQL / MariaDB
 3. **Application / Core (`app/`):** Controladores de regras de negócio, validações, cálculos financeiros e manipulação de fluxos.
 4. **Infrastructure & Config (`config/`, `database/`, `uploads/`):** Scripts PDO, gerenciamento de variáveis de ambiente, migrações SQL e armazenamento físico de arquivos.
 5. **Background Tasks (`cron/`):** Automações e rotinas periódicas (ex: envios de e-mail, relatórios automáticos e atualizações de status).
+
+## Publicacao para testes remotos
+
+O GitHub armazena e versiona o codigo. Para disponibilizar a aplicacao a usuarios, publique este repositorio em uma hospedagem com PHP 8.2+, MySQL/MariaDB e Composer.
+
+1. Clone o repositorio na hospedagem e execute `composer install --no-dev --optimize-autoloader`.
+2. Crie um banco MySQL e importe `config/schema.sql`.
+3. Copie `.env.example` para `.env` e preencha `DB_*`, `MAIL_*` e `MAIL_FROM_EMAIL` com valores da hospedagem. Nunca envie `.env` ao GitHub.
+4. Configure o Apache/Nginx para servir a raiz do projeto e confirme que o PHP pode gravar em `uploads/`.
+5. Agende `cron/processar_fila.php` a cada minuto com o PHP da hospedagem para processar a fila de e-mails.
+
+Exemplo de agendamento Linux:
+
+```cron
+* * * * * /usr/bin/php /caminho/do/projeto/cron/processar_fila.php >/dev/null 2>&1
+```

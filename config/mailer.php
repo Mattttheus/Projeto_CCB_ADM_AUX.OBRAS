@@ -1,88 +1,98 @@
 <?php
-// ==========================================
-// CONFIGURAÇÃO DE DISPARO DE E-MAIL (BREVO SMTP)
-// ==========================================
 
-use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\PHPMailer;
 
-// Inclui o autoload do Composer se a pasta vendor existir
 if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
     require_once __DIR__ . '/../vendor/autoload.php';
 }
 
-// Credenciais SMTP fornecidas pela Brevo
+require_once __DIR__ . '/conexao.php';
+
 $mail_host = getenv('MAIL_HOST') ?: 'smtp-relay.brevo.com';
 $mail_port = (int) (getenv('MAIL_PORT') ?: 587);
 $mail_user = getenv('MAIL_USER') ?: '';
 $mail_pass = getenv('MAIL_PASSWORD') ?: '';
+$mail_from_email = getenv('MAIL_FROM_EMAIL') ?: $mail_user;
 
-/**
- * Função para disparar alerta de novos chamados/ocorrências para os responsáveis
- * 
- * @param array $emails Lista de e-mails dos destinatários
- * @param string $nomeObra Nome da obra relacionada
- * @param string $titulo Título do chamado
- * @param string $descricao Descrição detalhada
- * @param string $prioridade Prioridade (verde, amarelo, vermelho)
- * @return bool
- */
-function enviarAlertaChamado(array $emails, string $nomeObra, string $titulo, string $descricao, string $prioridade): bool {
-    global $mail_host, $mail_port, $mail_user, $mail_pass;
+function enviarEmailFila(string $destinatario, string $assunto, string $mensagemHtml): void
+{
+    global $mail_host, $mail_port, $mail_user, $mail_pass, $mail_from_email;
 
-    if (empty($emails)) {
-        return false;
+    if ($mail_user === '' || $mail_pass === '' || !class_exists(PHPMailer::class)) {
+        throw new RuntimeException('Configure MAIL_USER e MAIL_PASSWORD para enviar e-mails.');
     }
 
-    // Verifica se a classe PHPMailer foi carregada
-    if (!class_exists('PHPMailer\PHPMailer\PHPMailer')) {
-        error_log("Erro: Classe PHPMailer não encontrada. Verifique o autoloader em vendor/autoload.php");
+    $mail = new PHPMailer(true);
+    $mail->isSMTP();
+    $mail->Host = $mail_host;
+    $mail->SMTPAuth = true;
+    $mail->Username = $mail_user;
+    $mail->Password = $mail_pass;
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    $mail->Port = $mail_port;
+    $mail->CharSet = 'UTF-8';
+    $mail->setFrom($mail_from_email, 'Auxiliar Obras');
+    $mail->addAddress($destinatario);
+    $mail->isHTML(true);
+    $mail->Subject = $assunto;
+    $mail->Body = $mensagemHtml;
+    $mail->send();
+}
+
+function enviarAlertaChamado(
+    array $emails,
+    string $nomeObra,
+    string $titulo,
+    string $descricao,
+    string $prioridade
+): bool {
+    global $mail_host, $mail_port, $mail_user, $mail_pass, $mail_from_email;
+
+    if ($emails === [] || $mail_user === '' || $mail_pass === '' || !class_exists(PHPMailer::class)) {
         return false;
     }
 
     $mail = new PHPMailer(true);
 
     try {
-        // Configurações do Servidor
         $mail->isSMTP();
-        $mail->Host       = $mail_host;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = $mail_user;
-        $mail->Password   = $mail_pass;
+        $mail->Host = $mail_host;
+        $mail->SMTPAuth = true;
+        $mail->Username = $mail_user;
+        $mail->Password = $mail_pass;
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = $mail_port;
-        $mail->CharSet    = 'UTF-8';
+        $mail->Port = $mail_port;
+        $mail->CharSet = 'UTF-8';
+        $mail->setFrom($mail_from_email, 'Auxiliar Obras - Sistema');
 
-        // Remetente (Use o mesmo e-mail ou domínio verificado na Brevo)
-        $mail->setFrom($mail_user, 'Auxiliar Obras - Sistema');
-
-        // Adicionar Destinatários
         foreach ($emails as $email) {
             if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $mail->addAddress($email);
             }
         }
 
-        // Conteúdo do E-mail
+        if (count($mail->getToAddresses()) === 0) {
+            return false;
+        }
+
         $badgeFarol = strtoupper($prioridade);
         $mail->isHTML(true);
         $mail->Subject = "[ALERTA - {$badgeFarol}] Novo Chamado na Obra: {$nomeObra}";
-        
         $mail->Body = "
-            <h2>Novo Chamado / Ocorrência Registrada</h2>
-            <p><strong>Obra:</strong> " . htmlspecialchars($nomeObra) . "</p>
+            <h2>Novo Chamado / Ocorrencia Registrada</h2>
+            <p><strong>Obra:</strong> " . htmlspecialchars($nomeObra, ENT_QUOTES, 'UTF-8') . "</p>
             <p><strong>Prioridade (Farol):</strong> {$badgeFarol}</p>
-            <p><strong>Título:</strong> " . htmlspecialchars($titulo) . "</p>
-            <p><strong>Descrição:</strong><br>" . nl2br(htmlspecialchars($descricao)) . "</p>
+            <p><strong>Titulo:</strong> " . htmlspecialchars($titulo, ENT_QUOTES, 'UTF-8') . "</p>
+            <p><strong>Descricao:</strong><br>" . nl2br(htmlspecialchars($descricao, ENT_QUOTES, 'UTF-8')) . "</p>
             <hr>
             <p><small>Acesse o painel do Auxiliar Obras para gerenciar este chamado.</small></p>
         ";
 
         $mail->send();
         return true;
-
-    } catch (Exception $e) {
-        error_log("Erro no envio de e-mail via PHPMailer: " . $mail->ErrorInfo);
+    } catch (Exception $exception) {
+        error_log('Erro no envio de e-mail via PHPMailer: ' . $mail->ErrorInfo);
         return false;
     }
 }
