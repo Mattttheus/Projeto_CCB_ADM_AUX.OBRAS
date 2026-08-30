@@ -114,3 +114,7 @@ Exemplo de agendamento Linux:
 Este repositorio inclui `Dockerfile`, portanto ambas as plataformas podem criar o servico web diretamente a partir da branch `main`. No Railway, adicione um servico MySQL e defina as variaveis do servico PHP usando referencias `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER` e `MYSQLPASSWORD`. No Render, crie um banco MySQL externo e informe os mesmos valores como `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` e `DB_PASSWORD`.
 
 Em ambas as plataformas, configure tambem `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD` e `MAIL_FROM_EMAIL`. Depois do primeiro deploy, importe `config/schema.sql` no banco provisionado. Crie um segundo servico agendado para executar `php cron/processar_fila.php` a cada minuto.
+
+### HostGator
+
+Para hospedagem compartilhada com cPanel, use o pacote `dist/auxiliar-obras-hostgator.zip` e siga [deploy/hostgator/README.md](deploy/hostgator/README.md). O pacote inclui as dependencias PHP e nao inclui `.env`, uploads ou logs.
