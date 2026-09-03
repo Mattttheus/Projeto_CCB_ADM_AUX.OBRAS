@@ -140,6 +140,6 @@ Depois de publicar a aplicacao:
 
 A aplicacao publicada pode ser acessada em:
 
-**URL:** https://SEU-DOMINIO-AQUI
+**URL:** https://auxiliardeobras.lovestoblog.com
 
 > Para visualizar o codigo-fonte, acesse este repositorio no GitHub.
