@@ -23,7 +23,36 @@ O **Auxiliar Obras** foi projetado para descentralizar e organizar a gestão de 
 
 ## Publicação no GitHub Pages
 
-O arquivo `index.html` é uma versão estática e funcional do painel, compatível com o GitHub Pages. Ela inclui dashboard, obras, atividades, calendário, financeiro e perfil, com ações de cadastro, filtros, alteração de status e exclusão persistidas no `localStorage` do navegador.
+O arquivo `index.html` é uma versão estática e funcional do painel, compatível com o GitHub Pages. Ela inclui login (demonstração), dashboard, obras, atividades, calendário, financeiro, documentos, relatórios (CSV), chamados, usuários, logs e perfil — com cadastros, filtros, alteração de status e exclusões persistidos no `localStorage` do navegador.
+
+### Arquitetura da versão estática (ES Modules)
+
+A versão estática espelha a arquitetura PHP, mantendo as mesmas regras de negócio e controle de acesso:
+
+```
+assets/js/
+├── app.js                                  # Bootstrap + roteador por hash + guardas de acesso
+├── core/
+│   ├── Auth.js                             # Sessão, login e perfis (admin/suporte/colaborador) — equivale a app/Core/Auth.php
+│   └── Validator.php → Validator.js        # Validações (e-mail, texto, data, números, enums)
+├── domain/
+│   ├── activity/ActivityStatus.js          # pendente/em_andamento/concluida + atraso derivado
+│   └── finance/FinancialCategory.js        # material/operacional/servico/equipamento/produto
+├── application/
+│   ├── activity/ActivityService.js         # Regras de atividades (equivale ao ActivityService.php)
+│   └── finance/FinancialService.js         # Lançamento = quantidade × valor unitário; orçamento
+├── infrastructure/persistence/
+│   └── LocalStore.js                       # "Repositório" localStorage (substitui os MySql*Repository)
+└── presentation/
+    ├── ui.js                               # Helpers de UI (layout, badges, modal, toast)
+    └── pages/                              # Uma página por módulo (dashboard, financeiro, usuários...)
+```
+
+**Controle de acesso no modo estático:** rotas protegidas exigem login; `Usuários` é restrito a `admin` e `Logs` a `admin`/`suporte` (equivalente ao `requireAdmin`/`hasFullProjectAccess` do PHP). Perfis de teste: `admin@auxiliarobras.local / demo123`, `suporte@auxiliarobras.local / suporte123`, `obras@auxiliarobras.local / obras123`.
+
+### Deploy automático (GitHub Actions)
+
+O workflow `.github/workflows/pages.yml` publica o site a cada push na branch `main`. Para ativar: **Settings → Pages → Source: GitHub Actions**. O site fica disponível em `https://<usuario>.github.io/Projeto_CCB_ADM_AUX.OBRAS/`.
 
 Esta versão não executa PHP, MySQL, sessões, uploads compartilhados ou envio de e-mails, pois o GitHub Pages serve apenas arquivos estáticos. O backend PHP original continua disponível para hospedagens com PHP e banco de dados, acessando `index.php` e as páginas em `page/`.
 

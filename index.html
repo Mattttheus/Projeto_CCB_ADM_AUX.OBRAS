@@ -30,13 +30,14 @@
                 <a href="#financeiro" data-route="financeiro"><span>R$</span> Financeiro</a>
                 <a href="#documentos" data-route="documentos"><span>▧</span> Documentos</a>
                 <a href="#relatorios" data-route="relatorios"><span>▥</span> Relatórios</a>
+                <a href="#chamados" data-route="chamados"><span>✉</span> Chamados</a>
             </nav>
             <div class="workspace-label system-label">SISTEMA</div>
             <nav class="nav" aria-label="Navegação do sistema">
                 <a href="#perfil" data-route="perfil"><span>◉</span> Meu perfil</a>
-                <a href="#usuarios" data-route="usuarios"><span>◎</span> Usuários</a>
-                <a href="#logs" data-route="logs"><span>≡</span> Logs de e-mail</a>
-                <a href="#login" data-route="login"><span>↪</span> Sair / Login</a>
+                <a href="#usuarios" data-route="usuarios" data-roles="admin"><span>◎</span> Usuários</a>
+                <a href="#logs" data-route="logs" data-roles="admin suporte"><span>≡</span> Logs de e-mail</a>
+                <a href="#login" data-route="login"><span>↪</span> Sair</a>
             </nav>
             <div class="sidebar-footer"><span class="status-dot"></span> Dados locais ativos</div>
         </aside>
@@ -50,9 +51,7 @@
                 <div class="topbar-actions">
                     <button class="icon-button" id="reset-data" type="button" title="Restaurar dados de demonstração"
                         aria-label="Restaurar dados de demonstração">↺</button>
-                    <div class="user-chip"><span
-                            class="avatar">MT</span><span><strong>Matheus</strong><small>Administrador</small></span>
-                    </div>
+                    <div class="user-chip" id="user-chip"></div>
                 </div>
             </header>
 
@@ -60,7 +59,7 @@
         </main>
     </div>
     <output id="toast" class="toast" aria-live="polite"></output>
-    <script src="assets/js/static-app.js"></script>
+    <script type="module" src="assets/js/app.js"></script>
 </body>
 
 </html>

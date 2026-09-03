@@ -746,3 +746,22 @@ textarea.field {
 .login-card .brand-mark {
     margin-bottom: 28px;
 }
+
+/* Estado deslogado: oculta o chrome (sidebar/topbar) e centraliza o login. */
+body.logged-out .sidebar,
+body.logged-out .topbar {
+    display: none;
+}
+
+body.logged-out .main-content {
+    margin-left: 0;
+    width: 100%;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+}
+
+body.logged-out .page-container {
+    width: 100%;
+    max-width: 460px;
+}
