@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../app/bootstrap.php';
 
 \App\Core\Auth::requireUser();
-if (!isset($conn) || !($conn instanceof mysqli)) {
+if (!isset($conn)) {
     die('Falha na conexão: a variável $conn não foi inicializada. Verifique config/conexao.php.');
 }
 

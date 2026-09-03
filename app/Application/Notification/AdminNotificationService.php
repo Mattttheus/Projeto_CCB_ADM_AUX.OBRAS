@@ -8,7 +8,7 @@ use RuntimeException;
 
 final class AdminNotificationService
 {
-    public function __construct(private mysqli $connection) {}
+    public function __construct(private object $connection) {}
 
     public function notifyOverdueActivity(int $activityId): void
     {

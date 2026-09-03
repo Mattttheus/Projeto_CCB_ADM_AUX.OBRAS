@@ -8,7 +8,7 @@ use RuntimeException;
 
 final class MySqlActivityRepository
 {
-    public function __construct(private mysqli $connection)
+    public function __construct(private object $connection)
     {
     }
 
@@ -81,7 +81,7 @@ final class MySqlActivityRepository
         return $this->rows('SELECT a.*, o.nome AS nome_obra FROM atividades a LEFT JOIN obras o ON a.obra_id = o.id WHERE a.data_limite IS NOT NULL ORDER BY a.data_limite ASC');
     }
 
-    private function prepare(string $sql): \mysqli_stmt
+    private function prepare(string $sql): object
     {
         $statement = $this->connection->prepare($sql);
         if (!$statement) {
@@ -90,7 +90,7 @@ final class MySqlActivityRepository
         return $statement;
     }
 
-    private function execute(\mysqli_stmt $statement): void
+    private function execute(object $statement): void
     {
         if (!$statement->execute()) {
             throw new RuntimeException('Não foi possível concluir a operação no banco de dados.');
@@ -108,7 +108,7 @@ final class MySqlActivityRepository
     }
 
     /** @return list<array<string, mixed>> */
-    private function statementRows(\mysqli_stmt $statement): array
+    private function statementRows(object $statement): array
     {
         $result = $statement->get_result();
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];

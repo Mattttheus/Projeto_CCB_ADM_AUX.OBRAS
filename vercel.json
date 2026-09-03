@@ -1,0 +1,30 @@
+{
+    "version": 2,
+    "functions": {
+        "**/*.php": {
+            "runtime": "vercel-php@0.7.0"
+        }
+    },
+    "routes": [
+        {
+            "src": "/(assets|uploads)/(.*)",
+            "dest": "/$1/$2"
+        },
+        {
+            "src": "/page/(.*)",
+            "dest": "/page/$1"
+        },
+        {
+            "src": "/cron/(.*)",
+            "dest": "/cron/$1"
+        },
+        {
+            "src": "/",
+            "dest": "/index.php"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/$1"
+        }
+    ]
+}

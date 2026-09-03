@@ -63,7 +63,7 @@ final class Auth
         return in_array($role, ['admin', 'suporte'], true);
     }
 
-    public static function canAccessProject(\mysqli $connection, int $projectId): bool
+    public static function canAccessProject(object $connection, int $projectId): bool
     {
         self::requireUser();
 

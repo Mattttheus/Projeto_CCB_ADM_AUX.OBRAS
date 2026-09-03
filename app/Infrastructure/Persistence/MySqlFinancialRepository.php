@@ -8,7 +8,7 @@ use RuntimeException;
 
 final class MySqlFinancialRepository
 {
-    public function __construct(private mysqli $connection) {}
+    public function __construct(private object $connection) {}
 
     public function createEntry(int $projectId, string $category, string $description, float $quantity, float $unitCost, string $date): void
     {
@@ -83,7 +83,7 @@ final class MySqlFinancialRepository
 
         return $statement->get_result()->fetch_all(MYSQLI_ASSOC);
     }
-    private function prepare(string $sql): \mysqli_stmt { $stmt = $this->connection->prepare($sql); if (!$stmt) throw new RuntimeException('Estrutura financeira indisponível. Execute a migração database/migrations/20260816_financeiro.sql.'); return $stmt; }
-    private function execute(\mysqli_stmt $statement): void { if (!$statement->execute()) throw new RuntimeException('Não foi possível salvar o lançamento financeiro.'); }
+    private function prepare(string $sql): object { $stmt = $this->connection->prepare($sql); if (!$stmt) throw new RuntimeException('Estrutura financeira indisponível. Execute a migração database/migrations/20260816_financeiro.sql.'); return $stmt; }
+    private function execute(object $statement): void { if (!$statement->execute()) throw new RuntimeException('Não foi possível salvar o lançamento financeiro.'); }
     /** @return list<array<string,mixed>> */ private function rows(string $sql): array { $result = $this->connection->query($sql); if (!$result) throw new RuntimeException('Estrutura financeira indisponível. Execute a migração database/migrations/20260816_financeiro.sql.'); return $result->fetch_all(MYSQLI_ASSOC); }
 }

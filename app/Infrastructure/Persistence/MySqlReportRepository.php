@@ -8,7 +8,7 @@ use RuntimeException;
 
 final class MySqlReportRepository
 {
-    public function __construct(private mysqli $connection) {}
+    public function __construct(private object $connection) {}
 
     /** @return list<array<string,mixed>> */
     public function projectsForUser(int $userId, bool $hasFullAccess): array
@@ -104,7 +104,7 @@ final class MySqlReportRepository
     }
 
     private function money(float $value): string { return 'R$ ' . number_format($value, 2, ',', '.'); }
-    private function prepare(string $sql): \mysqli_stmt { $statement = $this->connection->prepare($sql); if (!$statement) throw new RuntimeException('Não foi possível preparar o relatório.'); return $statement; }
+    private function prepare(string $sql): object { $statement = $this->connection->prepare($sql); if (!$statement) throw new RuntimeException('Não foi possível preparar o relatório.'); return $statement; }
     /** @return list<array<string,mixed>> */
     private function rows(string $sql): array { $result = $this->connection->query($sql); if (!$result) throw new RuntimeException('Não foi possível consultar os relatórios.'); return $result->fetch_all(MYSQLI_ASSOC); }
 }

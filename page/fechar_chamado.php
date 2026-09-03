@@ -6,7 +6,7 @@ use App\Core\Csrf;
 use App\Application\Notification\AdminNotificationService;
 
 Auth::requireUser();
-if (!isset($conn) || !($conn instanceof mysqli)) {
+if (!isset($conn)) {
     die('Falha na conexão: verifique config/conexao.php');
 }
 

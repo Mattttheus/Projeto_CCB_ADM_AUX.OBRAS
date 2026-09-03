@@ -150,9 +150,9 @@ CREATE TABLE IF NOT EXISTS `obra_responsaveis` (
   CONSTRAINT `fk_resp_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Seed: usuário administrador padrão (senha hash de exemplo)
+-- Seed: usuário administrador padrão (senha: admin123)
 INSERT INTO `usuarios` (`nome`, `email`, `senha`, `role`, `tipo`)
-VALUES ('Administrador', 'admin@obras.com', '$2y$10$8k9.pU2/pXn5q4C3mP5eO.1M4g8J8vX2W.1u2i3o4p5q6r7s8t9u', 'admin', 'admin')
+VALUES ('Administrador', 'admin@obras.com', '$2y$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcg7b3XeKeUxWdeS86E36LrvWFm', 'admin', 'admin')
 ON DUPLICATE KEY UPDATE `id` = `id`;
 
 SET FOREIGN_KEY_CHECKS = 1;
