@@ -53,29 +53,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Login - Auxiliar Obras</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-    body {
-        background: #f5f6fa;
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .login-card {
-        width: 100%;
-        max-width: 400px;
-        padding: 25px;
-        border-radius: 10px;
-        background: #fff;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-    </style>
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
 </head>
 
-<body>
+<body class="app-login-body">
     <div class="login-card">
         <h3 class="text-center mb-4">Auxiliar Obras</h3>
         <?php if ($erro): ?>
