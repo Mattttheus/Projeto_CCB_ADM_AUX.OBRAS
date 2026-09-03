@@ -135,3 +135,11 @@ Depois de publicar a aplicacao:
 2. adicione a URL da aplicacao no campo **About** do GitHub;
 3. mantenha neste `README.md` um link para o ambiente publicado;
 4. se quiser distribuir um snapshot pronto, publique uma release com o ZIP de deploy.
+
+## Acesso publico
+
+A aplicacao publicada pode ser acessada em:
+
+**URL:** https://SEU-DOMINIO-AQUI
+
+> Para visualizar o codigo-fonte, acesse este repositorio no GitHub.
