@@ -156,11 +156,3 @@ VALUES ('Administrador', 'admin@obras.com', '$2y$10$8k9.pU2/pXn5q4C3mP5eO.1M4g8J
 ON DUPLICATE KEY UPDATE `id` = `id`;
 
 SET FOREIGN_KEY_CHECKS = 1;
-
--- Database connection settings
-DB_HOST=sql213.infinityfree.com
-DB_PORT=3306
-DB_NAME=if0_41646147_root
-DB_USER=if0_41646147
-DB_PASSWORD=senha_exibida_no_painel
-

@@ -115,6 +115,23 @@ Este repositorio inclui `Dockerfile`, portanto ambas as plataformas podem criar 
 
 Em ambas as plataformas, configure tambem `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD` e `MAIL_FROM_EMAIL`. Depois do primeiro deploy, importe `config/schema.sql` no banco provisionado. Crie um segundo servico agendado para executar `php cron/processar_fila.php` a cada minuto.
 
+### InfinityFree
+
+Para uma opcao gratuita focada em PHP compartilhado, use o pacote `dist/auxiliar-obras-infinityfree.zip` e siga [deploy/infinityfree/README.md](deploy/infinityfree/README.md).
+
+- O codigo pode ficar visivel no GitHub, mas a execucao publica precisa acontecer fora do GitHub.
+- A hospedagem deve oferecer PHP, MySQL e escrita em `uploads/`.
+- Se o plano gratuito nao oferecer cron, a fila de e-mails em `cron/processar_fila.php` ficara limitada ate que voce use execucao manual ou um agendador externo.
+
 ### HostGator
 
 Para hospedagem compartilhada com cPanel, use o pacote `dist/auxiliar-obras-hostgator.zip` e siga [deploy/hostgator/README.md](deploy/hostgator/README.md). O pacote inclui as dependencias PHP e nao inclui `.env`, uploads ou logs.
+
+## Divulgacao via GitHub
+
+Depois de publicar a aplicacao:
+
+1. deixe o repositorio publico para que o codigo possa ser visualizado;
+2. adicione a URL da aplicacao no campo **About** do GitHub;
+3. mantenha neste `README.md` um link para o ambiente publicado;
+4. se quiser distribuir um snapshot pronto, publique uma release com o ZIP de deploy.
