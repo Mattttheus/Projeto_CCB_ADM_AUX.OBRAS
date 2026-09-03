@@ -97,6 +97,8 @@ Banco de dados MySQL / MariaDB
 
 O GitHub armazena e versiona o codigo. Para disponibilizar a aplicacao a usuarios, publique este repositorio em uma hospedagem com PHP 8.2+, MySQL/MariaDB e Composer.
 
+Para testes controlados em ambiente Windows, tambem e possivel publicar com WampServer. Use esse caminho apenas para acesso interno ou validacao remota temporaria; para producao publica, prefira Linux/VPS.
+
 1. Clone o repositorio na hospedagem e execute `composer install --no-dev --optimize-autoloader`.
 2. Crie um banco MySQL e importe `config/schema.sql`.
 3. Copie `.env.example` para `.env` e preencha `DB_*`, `MAIL_*` e `MAIL_FROM_EMAIL` com valores da hospedagem. Nunca envie `.env` ao GitHub.
@@ -114,6 +116,10 @@ Exemplo de agendamento Linux:
 Este repositorio inclui `Dockerfile`, portanto ambas as plataformas podem criar o servico web diretamente a partir da branch `main`. No Railway, adicione um servico MySQL e defina as variaveis do servico PHP usando referencias `MYSQLHOST`, `MYSQLPORT`, `MYSQLDATABASE`, `MYSQLUSER` e `MYSQLPASSWORD`. No Render, crie um banco MySQL externo e informe os mesmos valores como `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` e `DB_PASSWORD`.
 
 Em ambas as plataformas, configure tambem `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD` e `MAIL_FROM_EMAIL`. Depois do primeiro deploy, importe `config/schema.sql` no banco provisionado. Crie um segundo servico agendado para executar `php cron/processar_fila.php` a cada minuto.
+
+### WampServer
+
+Para publicacao remota com Windows e Apache local, siga [deploy/wampserver/README.md](deploy/wampserver/README.md). O guia cobre virtual host, importacao do banco, `.env`, permissao de `uploads/`, abertura de portas WAN, HTTPS e tarefa agendada do Windows.
 
 ### HostGator
 
