@@ -87,36 +87,10 @@ $logFila = $conn->query("SELECT * FROM fila_emails ORDER BY id DESC LIMIT 50");
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-    body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f4f6f9;
-    }
-
-    .card-custom {
-        background: #fff;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-    }
-
-    .badge-soft-success {
-        background-color: #dcfce7;
-        color: #166534;
-    }
-
-    .badge-soft-warning {
-        background-color: #fef9c3;
-        color: #854d0e;
-    }
-
-    .badge-soft-danger {
-        background-color: #fee2e2;
-        color: #991b1b;
-    }
-    </style>
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
 </head>
 
-<body class="p-4">
+<body class="app-monitor-body p-4">
 
     <div class="container-fluid">
         <?php if ($success): ?><div class="alert alert-success"><?= htmlspecialchars($success) ?></div><?php endif; ?>
@@ -135,25 +109,25 @@ $logFila = $conn->query("SELECT * FROM fila_emails ORDER BY id DESC LIMIT 50");
         <!-- CARDS KPI DE STATUS -->
         <div class="row g-3 mb-4">
             <div class="col-md-3">
-                <div class="card card-custom p-3 border-start border-4 border-primary">
+                <div class="card monitor-card p-3 border-start border-4 border-primary">
                     <small class="text-muted fw-bold">TOTAL PROCESSADOS</small>
                     <h3 class="fw-bold mb-0 text-dark"><?= $totais['total'] ?? 0 ?></h3>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card card-custom p-3 border-start border-4 border-warning">
+                <div class="card monitor-card p-3 border-start border-4 border-warning">
                     <small class="text-muted fw-bold">PENDENTES NA FILA</small>
                     <h3 class="fw-bold mb-0 text-warning"><?= $totais['pendentes'] ?? 0 ?></h3>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card card-custom p-3 border-start border-4 border-success">
+                <div class="card monitor-card p-3 border-start border-4 border-success">
                     <small class="text-muted fw-bold">ENVIADOS COM SUCESSO</small>
                     <h3 class="fw-bold mb-0 text-success"><?= $totais['enviados'] ?? 0 ?></h3>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card card-custom p-3 border-start border-4 border-danger">
+                <div class="card monitor-card p-3 border-start border-4 border-danger">
                     <small class="text-muted fw-bold">FALHAS / ERROS</small>
                     <h3 class="fw-bold mb-0 text-danger"><?= $totais['erros'] ?? 0 ?></h3>
                 </div>
@@ -161,10 +135,10 @@ $logFila = $conn->query("SELECT * FROM fila_emails ORDER BY id DESC LIMIT 50");
         </div>
 
         <!-- TABELA DE LOGS -->
-        <div class="card card-custom">
+        <div class="card monitor-card">
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
+                    <table class="table table-hover align-middle mb-0 table-compact">
                         <thead class="table-light">
                             <tr>
                                 <th>#ID</th>

@@ -53,41 +53,10 @@ function money(float $value): string { return 'R$ ' . number_format($value, 2, '
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="../assets/css/corporate-calendar.css" rel="stylesheet">
-    <style>
-    .finance-metric {
-        padding: 1.25rem;
-        height: 100%
-    }
-
-    .finance-metric .value {
-        font-size: 1.45rem;
-        font-weight: 750;
-        color: #0b2233
-    }
-
-    .finance-metric .label {
-        font-size: .78rem;
-        color: #6b7d8a;
-        text-transform: uppercase;
-        letter-spacing: .05em;
-        font-weight: 700
-    }
-
-    .progress {
-        height: .55rem
-    }
-
-    .category-dot {
-        width: .65rem;
-        height: .65rem;
-        border-radius: 50%;
-        display: inline-block;
-        background: #0f766e
-    }
-    </style>
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
 </head>
 
-<body>
+<body class="app-page-body">
     <header class="app-header">
         <div class="container-xl d-flex flex-wrap gap-3 justify-content-between align-items-center">
             <div>
