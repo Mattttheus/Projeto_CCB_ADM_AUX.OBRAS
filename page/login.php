@@ -22,11 +22,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $erro = "Preencha todos os campos.";
         } else {
             // Consulta no padrão PDO
-            $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = :email");
+            $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = :email LIMIT 1");
             $stmt->execute([':email' => $email]);
             $usuario = $stmt->fetch();
 
-            if ($usuario && password_verify($senha, $usuario['senha'])) {
+            if ($usuario && password_verify($senha, $usuario['senha']) && (int) ($usuario['ativo'] ?? 1) === 1) {
                 session_regenerate_id(true);
                 unset($_SESSION['login_attempts']);
                 $_SESSION['usuario_id']   = $usuario['id'];
@@ -38,6 +38,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 header("Location: dashboard.php");
                 exit;
+            } elseif ($usuario && password_verify($senha, $usuario['senha'])) {
+                $erro = "Seu acesso ainda não foi liberado pelo administrador.";
             } else {
                 $_SESSION['login_attempts'] = ['count' => (int) $loginAttempts['count'] + 1, 'expires_at' => (int) $loginAttempts['expires_at']];
                 $erro = "E-mail ou senha inválidos.";

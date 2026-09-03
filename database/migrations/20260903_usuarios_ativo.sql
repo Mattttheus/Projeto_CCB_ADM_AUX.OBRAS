@@ -1,0 +1,4 @@
+ALTER TABLE usuarios
+    ADD COLUMN ativo TINYINT(1) NOT NULL DEFAULT 1 AFTER tipo;
+
+UPDATE usuarios SET ativo = 1 WHERE ativo IS NULL;

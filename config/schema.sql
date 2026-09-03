@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
   `senha` VARCHAR(255) NOT NULL,
   `role` VARCHAR(20) DEFAULT 'user',
   `tipo` VARCHAR(20) DEFAULT 'comum',
+  `ativo` TINYINT(1) NOT NULL DEFAULT 1,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

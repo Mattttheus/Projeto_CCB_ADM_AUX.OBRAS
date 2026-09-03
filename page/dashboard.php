@@ -644,22 +644,29 @@ if ($obrasFinanceiro) {
                 <div class="col-lg-3 col-md-6">
                     <div class="card-dashboard section-card h-100">
                         <div class="section-subtitle">Saldo de orçamento</div>
-                        <div class="fw-bold fs-4 mt-1 <?= $saldoOrcamento < 0 ? 'text-danger' : 'text-success' ?>">R$ <?= number_format($saldoOrcamento, 2, ',', '.') ?></div>
-                        <div class="progress mt-3"><div class="progress-bar <?= $saldoOrcamento < 0 ? 'bg-danger' : 'bg-success' ?>" style="width: <?= $percentualOrcamento ?>%"></div></div>
+                        <div class="fw-bold fs-4 mt-1 <?= $saldoOrcamento < 0 ? 'text-danger' : 'text-success' ?>">R$
+                            <?= number_format($saldoOrcamento, 2, ',', '.') ?></div>
+                        <div class="progress mt-3">
+                            <div class="progress-bar <?= $saldoOrcamento < 0 ? 'bg-danger' : 'bg-success' ?>"
+                                style="width: <?= $percentualOrcamento ?>%"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="card-dashboard section-card h-100">
                         <div class="section-subtitle">Consumo de materiais</div>
-                        <div class="fw-bold fs-4 mt-1">R$ <?= number_format($totalMateriaisFinanceiro, 2, ',', '.') ?></div>
+                        <div class="fw-bold fs-4 mt-1">R$ <?= number_format($totalMateriaisFinanceiro, 2, ',', '.') ?>
+                        </div>
                         <small class="text-muted">Insumos registrados</small>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
                     <div class="card-dashboard section-card h-100">
                         <div class="section-subtitle">Custos operacionais</div>
-                        <div class="fw-bold fs-4 mt-1">R$ <?= number_format($totalOperacionalFinanceiro, 2, ',', '.') ?></div>
-                        <a href="financeiro.php" class="small text-decoration-none">Abrir gestão financeira <i class="bi bi-arrow-right"></i></a>
+                        <div class="fw-bold fs-4 mt-1">R$ <?= number_format($totalOperacionalFinanceiro, 2, ',', '.') ?>
+                        </div>
+                        <a href="financeiro.php" class="small text-decoration-none">Abrir gestão financeira <i
+                                class="bi bi-arrow-right"></i></a>
                     </div>
                 </div>
             </div>
@@ -788,8 +795,10 @@ if ($obrasFinanceiro) {
                                 <div class="section-title mb-3">Upload de documento</div>
                                 <div class="section-subtitle mb-3">Envie um PDF diretamente para a obra selecionada.
                                 </div>
-                                <form action="upload_doc.php" method="POST" enctype="multipart/form-data" class="row g-2 align-items-end">
-                                    <input type="hidden" name="_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                                <form action="upload_doc.php" method="POST" enctype="multipart/form-data"
+                                    class="row g-2 align-items-end">
+                                    <input type="hidden" name="_token"
+                                        value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
                                     <div class="col-md-6 col-xl-3">
                                         <label class="form-label small fw-semibold">Obra</label>
                                         <select name="obra_id" class="form-select form-select-sm" required>
@@ -823,7 +832,8 @@ if ($obrasFinanceiro) {
                                             accept=".pdf" required>
                                     </div>
                                     <div class="col-12 col-xl-1 d-grid">
-                                        <button type="submit" class="btn btn-primary btn-sm text-nowrap"><i class="bi bi-upload me-1"></i>Enviar</button>
+                                        <button type="submit" class="btn btn-primary btn-sm text-nowrap"><i
+                                                class="bi bi-upload me-1"></i>Enviar</button>
                                     </div>
                                 </form>
                             </div>
@@ -838,22 +848,39 @@ if ($obrasFinanceiro) {
                     <div class="card-dashboard section-card h-100">
                         <div class="section-title mb-3">Upload de documento</div>
                         <div class="section-subtitle mb-3">Envie um PDF diretamente para a obra selecionada.</div>
-                        <form action="upload_doc.php" method="POST" enctype="multipart/form-data" class="row g-2 align-items-end">
-                            <input type="hidden" name="_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                        <form action="upload_doc.php" method="POST" enctype="multipart/form-data"
+                            class="row g-2 align-items-end">
+                            <input type="hidden" name="_token"
+                                value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
                             <div class="col-md-6 col-xl-3">
                                 <label class="form-label small fw-semibold">Obra</label>
                                 <select name="obra_id" class="form-select form-select-sm" required>
                                     <?php if ($obrasList && $obrasList->num_rows > 0): ?>
                                     <?php while ($obra = $obrasList->fetch_assoc()): ?>
-                                    <option value="<?= (int)$obra['id'] ?>"><?= htmlspecialchars($obra['nome']) ?></option>
+                                    <option value="<?= (int)$obra['id'] ?>"><?= htmlspecialchars($obra['nome']) ?>
+                                    </option>
                                     <?php endwhile; ?>
                                     <?php else: ?><option value="">Nenhuma obra disponível</option><?php endif; ?>
                                 </select>
                             </div>
-                            <div class="col-md-6 col-xl-3"><label class="form-label small fw-semibold">Nome do documento</label><input type="text" name="nome_arquivo" class="form-control form-control-sm" required placeholder="Ex: Planta hidráulica"></div>
-                            <div class="col-md-4 col-xl-2"><label class="form-label small fw-semibold">Tipo</label><select name="tipo_documento" class="form-select form-select-sm" required><option value="Planta">Planta</option><option value="Contrato">Contrato</option><option value="Relatório">Relatório</option><option value="Outros">Outros</option></select></div>
-                            <div class="col-md-8 col-xl-3"><label class="form-label small fw-semibold">Arquivo PDF</label><input type="file" name="arquivo" class="form-control form-control-sm" accept=".pdf" required></div>
-                            <div class="col-12 col-xl-1 d-grid"><button type="submit" class="btn btn-primary btn-sm text-nowrap"><i class="bi bi-upload me-1"></i>Enviar</button></div>
+                            <div class="col-md-6 col-xl-3"><label class="form-label small fw-semibold">Nome do
+                                    documento</label><input type="text" name="nome_arquivo"
+                                    class="form-control form-control-sm" required placeholder="Ex: Planta hidráulica">
+                            </div>
+                            <div class="col-md-4 col-xl-2"><label
+                                    class="form-label small fw-semibold">Tipo</label><select name="tipo_documento"
+                                    class="form-select form-select-sm" required>
+                                    <option value="Planta">Planta</option>
+                                    <option value="Contrato">Contrato</option>
+                                    <option value="Relatório">Relatório</option>
+                                    <option value="Outros">Outros</option>
+                                </select></div>
+                            <div class="col-md-8 col-xl-3"><label class="form-label small fw-semibold">Arquivo
+                                    PDF</label><input type="file" name="arquivo" class="form-control form-control-sm"
+                                    accept=".pdf" required></div>
+                            <div class="col-12 col-xl-1 d-grid"><button type="submit"
+                                    class="btn btn-primary btn-sm text-nowrap"><i
+                                        class="bi bi-upload me-1"></i>Enviar</button></div>
                         </form>
                     </div>
                 </div>
@@ -961,7 +988,8 @@ if ($obrasFinanceiro) {
                                             <?php if ($ch['status'] !== 'fechado' && $can_edit_status): ?>
                                             <form method="POST" action="fechar_chamado.php" class="d-inline"
                                                 onsubmit="return confirm('Dar baixa neste chamado?');">
-                                                <input type="hidden" name="_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
+                                                <input type="hidden" name="_token"
+                                                    value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
                                                 <input type="hidden" name="chamado_id" value="<?= (int)$ch['id'] ?>">
                                                 <button type="submit" class="btn btn-sm btn-outline-success">Dar
                                                     baixa</button>

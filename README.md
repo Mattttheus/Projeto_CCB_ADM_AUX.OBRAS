@@ -12,14 +12,20 @@ Sistema web para gestão administrativa, financeira e operacional de obras da Co
    - [Clean Architecture](#clean-architecture)
    - [Boas Práticas de Clean Code](#boas-práticas-de-clean-code)
 3. [Estrutura do Repositório](#-estrutura-do-repositório)
-4. [Módulos & Funcionalidades](#-módulos--funcionalidades)
-5. [Configuração & Instalação](#-configuração--instalação)
+4. [Módulos & Funcionalidades](#módulos--funcionalidades)
+5. [Configuração & Instalação](#configuração--instalação)
 
 ---
 
 ## 💡 Visão Geral
 
 O **Auxiliar Obras** foi projetado para descentralizar e organizar a gestão de reformas e construções. A plataforma permite monitorar fluxos de caixa, agendamentos, cronogramas operacionais (via *Cron Jobs*) e repositório centralizado de comprovantes/anexos.
+
+## Publicação no GitHub Pages
+
+O arquivo `index.html` é uma versão estática e funcional do painel, compatível com o GitHub Pages. Ela inclui dashboard, obras, atividades, calendário, financeiro e perfil, com ações de cadastro, filtros, alteração de status e exclusão persistidas no `localStorage` do navegador.
+
+Esta versão não executa PHP, MySQL, sessões, uploads compartilhados ou envio de e-mails, pois o GitHub Pages serve apenas arquivos estáticos. O backend PHP original continua disponível para hospedagens com PHP e banco de dados, acessando `index.php` e as páginas em `page/`.
 
 ---
 
@@ -63,7 +69,9 @@ Projeto_CCB_ADM_AUX.OBRAS/
 ├── database/         # Schemas SQL, tabelas e rotinas de banco de dados
 ├── page/             # Páginas da aplicação (Dashboard, Módulos de Entrada/Saída)
 └── uploads/          # Diretório de armazenamento seguro de anexos e notas fiscais
-⚙️ Módulos & Funcionalidades
+
+## Módulos & Funcionalidades
+
 🏠 Dashboard (page/dashboard.php)
 Resumo consolidado de balanço (Total de Receitas vs. Despesas).
 
@@ -82,7 +90,8 @@ Tratamento centralizado de conexões PDO.
 
 Controle de sessão seguro (session_start(), proteção de páginas restritas).
 
-🚀 Configuração & Instalação
+## Configuração & Instalação
+
 Pré-requisitos
 PHP 7.4+ ou PHP 8.x
 

@@ -11,6 +11,7 @@ $success = "";
 $nome = '';
 $email = '';
 $tipo = 'user';
+$ativo = 1;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -19,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL); //[cite: 1]
     $senha = $_POST['senha'] ?? ''; //[cite: 1]
     $tipo  = trim($_POST['tipo'] ?? 'user');
+    $ativo = isset($_POST['ativo']) ? 1 : 0;
     $allowedRoles = ['admin', 'engenheiro', 'mestre_obras', 'user'];
     if (!in_array($tipo, $allowedRoles, true)) {
         $tipo = 'user';
@@ -40,14 +42,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'E-mail já cadastrado.'; //[cite: 1]
         } else {
             $senhaHash = password_hash($senha, PASSWORD_DEFAULT); //[cite: 1]
-            $stmt = $conn->prepare("INSERT INTO usuarios (nome, email, senha, role, tipo) VALUES (?, ?, ?, ?, ?)"); //[cite: 1]
-            $stmt->bind_param("sssss", $nome, $email, $senhaHash, $tipo, $tipo); //[cite: 1]
+            $stmt = $conn->prepare("INSERT INTO usuarios (nome, email, senha, role, tipo, ativo) VALUES (?, ?, ?, ?, ?, ?)"); //[cite: 1]
+            $stmt->bind_param("sssssi", $nome, $email, $senhaHash, $tipo, $tipo, $ativo); //[cite: 1]
             
             if ($stmt->execute()) { //[cite: 1]
                 $success = 'Usuário interno cadastrado com sucesso!'; //[cite: 1]
                 $nome = '';
                 $email = '';
                 $tipo = 'user';
+                $ativo = 1;
             } else {
                 $error = 'Erro ao cadastrar usuário.';
             }
@@ -102,6 +105,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="mb-3">
                                 <label class="form-label">Senha</label>
                                 <input type="password" name="senha" class="form-control" required>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input type="checkbox" name="ativo" value="1" class="form-check-input" id="ativo"
+                                    <?= $ativo ? 'checked' : '' ?>>
+                                <label class="form-check-label" for="ativo">Liberar acesso imediatamente</label>
                             </div>
                             <button type="submit" class="btn btn-success w-100">Cadastrar</button>
                             <a href="dashboard.php" class="btn btn-link w-100 text-center mt-2">Voltar ao painel</a>

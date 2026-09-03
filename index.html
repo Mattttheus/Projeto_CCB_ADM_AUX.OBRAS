@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Painel estático de gestão de obras do Auxiliar Obras.">
+    <title>Auxiliar Obras | Painel de gestão</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/static-app.css">
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" id="sidebar">
+            <a class="brand" href="#dashboard" data-route="dashboard" aria-label="Ir para o dashboard">
+                <span class="brand-mark">AO</span>
+                <span><strong>Auxiliar</strong><small>Obras</small></span>
+            </a>
+            <div class="workspace-label">CENTRO DE CONTROLE</div>
+            <nav class="nav" aria-label="Navegação principal">
+                <a href="#dashboard" data-route="dashboard"><span>▦</span> Visão geral</a>
+                <a href="#obras" data-route="obras"><span>▤</span> Obras</a>
+                <a href="#atividades" data-route="atividades"><span>✓</span> Atividades</a>
+                <a href="#calendario" data-route="calendario"><span>◫</span> Calendário</a>
+                <a href="#financeiro" data-route="financeiro"><span>R$</span> Financeiro</a>
+                <a href="#documentos" data-route="documentos"><span>▧</span> Documentos</a>
+                <a href="#relatorios" data-route="relatorios"><span>▥</span> Relatórios</a>
+            </nav>
+            <div class="workspace-label system-label">SISTEMA</div>
+            <nav class="nav" aria-label="Navegação do sistema">
+                <a href="#perfil" data-route="perfil"><span>◉</span> Meu perfil</a>
+                <a href="#usuarios" data-route="usuarios"><span>◎</span> Usuários</a>
+                <a href="#logs" data-route="logs"><span>≡</span> Logs de e-mail</a>
+                <a href="#login" data-route="login"><span>↪</span> Sair / Login</a>
+            </nav>
+            <div class="sidebar-footer"><span class="status-dot"></span> Dados locais ativos</div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <button class="icon-button menu-toggle" id="menu-toggle" type="button"
+                    aria-label="Abrir menu">☰</button>
+                <div class="breadcrumb"><span>Auxiliar Obras</span><b>/</b><strong id="breadcrumb-current">Visão
+                        geral</strong></div>
+                <div class="topbar-actions">
+                    <button class="icon-button" id="reset-data" type="button" title="Restaurar dados de demonstração"
+                        aria-label="Restaurar dados de demonstração">↺</button>
+                    <div class="user-chip"><span
+                            class="avatar">MT</span><span><strong>Matheus</strong><small>Administrador</small></span>
+                    </div>
+                </div>
+            </header>
+
+            <div id="app" class="page-container"></div>
+        </main>
+    </div>
+    <output id="toast" class="toast" aria-live="polite"></output>
+    <script src="assets/js/static-app.js"></script>
+</body>
+
+</html>
