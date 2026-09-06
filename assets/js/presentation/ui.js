@@ -1,32 +1,51 @@
 // Presentation — helpers de renderização compartilhados pelas páginas.
 import { ACTIVITY_STATUS_LABELS } from '../domain/activity/ActivityStatus.js';
 import { FINANCIAL_CATEGORY_LABELS } from '../domain/finance/FinancialCategory.js';
+import { OBRA_STATUS_LABELS } from '../domain/obra/ObraStatus.js';
 import { ROLE_LABELS } from '../core/Auth.js';
 
 const LABELS = {
     ...ACTIVITY_STATUS_LABELS,
     ...FINANCIAL_CATEGORY_LABELS,
     ...ROLE_LABELS,
+    ...OBRA_STATUS_LABELS,
     liberado: 'Liberado',
     bloqueado: 'Bloqueado',
     aberto: 'Aberto',
     em_analise: 'Em análise',
+    em_atendimento: 'Em atendimento',
+    resolvido: 'Resolvido',
+    fechado: 'Fechado',
     informativo: 'Informativo',
+    verde: 'Normal',
+    amarelo: 'Alta',
+    vermelho: 'Urgente',
 };
 
 const TONES = {
     pendente: 'gray',
     em_andamento: 'orange',
     concluida: 'green',
+    pausada: 'gray',
     atrasada: 'red',
     admin: 'green',
     suporte: 'orange',
+    engenheiro: 'orange',
+    mestre_obras: 'orange',
     colaborador: 'gray',
+    comum: 'gray',
+    user: 'gray',
     liberado: 'green',
     bloqueado: 'red',
     aberto: 'red',
     em_analise: 'orange',
+    em_atendimento: 'orange',
+    resolvido: 'green',
+    fechado: 'gray',
     informativo: 'gray',
+    verde: 'green',
+    amarelo: 'orange',
+    vermelho: 'red',
 };
 
 export function escapeHtml(value) {
@@ -76,9 +95,9 @@ export function closeModal() {
 }
 
 /**
- * Abre um modal de formulário. onSubmit recebe um objeto com os campos (name="...")
- * e pode lançar Error/ValidationError — a mensagem é exibida em toast e o modal
- * permanece aberto para correção (mesmo comportamento das validações do PHP).
+ * Abre um modal de formulário. onSubmit recebe um objeto com os campos (name="..."),
+ * pode ser assíncrono e pode lançar Error/ValidationError — a mensagem é exibida
+ * em toast e o modal permanece aberto para correção (mesmo comportamento do PHP).
  */
 export function openModal(title, bodyHtml, onSubmit, onSuccess) {
     closeModal();
@@ -89,16 +108,31 @@ export function openModal(title, bodyHtml, onSubmit, onSuccess) {
                 <form id="modal-form">${bodyHtml}<div class="form-actions"><button class="button button-primary" type="submit">Salvar</button></div></form>
             </div>
         </div>`);
-    document.querySelector('#modal-form').addEventListener('submit', event => {
+    const form = document.querySelector('#modal-form');
+    form.addEventListener('submit', async event => {
         event.preventDefault();
-        const data = Object.fromEntries(new FormData(event.target).entries());
+        const submit = form.querySelector('button[type="submit"]');
+        submit.disabled = true;
         try {
-            onSubmit(data);
+            await onSubmit(Object.fromEntries(new FormData(form).entries()));
         } catch (error) {
             notify(error.message);
+            submit.disabled = false;
             return;
         }
         closeModal();
-        onSuccess?.();
+        await onSuccess?.();
     });
+}
+
+/** Modal informativo (somente leitura) com HTML livre — usado nos detalhes do calendário. */
+export function openInfoModal(title, bodyHtml) {
+    closeModal();
+    document.body.insertAdjacentHTML('beforeend', `
+        <div class="modal-backdrop" id="modal">
+            <div class="modal">
+                <div class="modal-head"><h2>${title}</h2><button class="close-button" type="button" data-action="close-modal" aria-label="Fechar">×</button></div>
+                <div class="modal-body">${bodyHtml}</div>
+            </div>
+        </div>`);
 }

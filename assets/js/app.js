@@ -1,6 +1,7 @@
-// Bootstrap da SPA estática — roteador por hash com guarda de acesso por perfil,
-// espelhando o controle de sessão do app/Core/Auth.php (modo demonstração local).
-import { store } from './infrastructure/persistence/LocalStore.js';
+// Bootstrap da SPA — roteador por hash com guarda de acesso por perfil,
+// espelhando o controle de sessão do app/Core/Auth.php.
+// Modo duplo: Supabase (produção, com RLS por responsável) ou demonstração local.
+import { store, BACKEND_MODE } from './infrastructure/persistence/Store.js';
 import { Auth, ROLE_LABELS } from './core/Auth.js';
 import { Validator } from './core/Validator.js';
 import { ActivityService } from './application/activity/ActivityService.js';
@@ -26,11 +27,11 @@ const app = document.querySelector('#app');
 // Tabela de rotas: `roles` restringe o acesso (como requireAdmin no PHP).
 const routes = {
     login: { title: 'Login', public: true, render: conta.renderLogin, bind: conta.bindLogin },
-    dashboard: { title: 'Visão geral', render: dashboard.render },
+    dashboard: { title: 'Visão geral', render: dashboard.render, mount: dashboard.mount },
     obras: { title: 'Obras', render: obras.render, bind: obras.bind },
     atividades: { title: 'Atividades', render: atividades.render, bind: atividades.bind },
-    calendario: { title: 'Calendário', render: calendario.render },
-    financeiro: { title: 'Financeiro', render: financeiro.render },
+    calendario: { title: 'Calendário', render: calendario.render, bind: calendario.bind, mount: calendario.mount },
+    financeiro: { title: 'Financeiro', render: financeiro.render, bind: financeiro.bind, mount: financeiro.mount },
     documentos: { title: 'Documentos', render: documentos.render, bind: documentos.bind },
     relatorios: { title: 'Relatórios', render: relatorios.render, bind: relatorios.bind },
     chamados: { title: 'Chamados', render: chamados.renderChamados },
@@ -48,40 +49,54 @@ const ctx = {
     notify: ui.notify,
     rerender: () => render(),
     navigate: route => { location.hash = route; },
+    openActivityModal: (prefillDate) => openEntityModal('activity', prefillDate),
 };
 
 function currentRoute() {
     return location.hash.slice(1) || 'dashboard';
 }
 
-function render() {
-    let key = currentRoute();
+let rendering = false;
 
-    // Guarda de sessão (requireUser): sem login, só a rota pública é acessível.
-    if (!Auth.isAuthenticated() && !routes[key]?.public) {
-        location.hash = 'login';
-        return;
+async function render() {
+    if (rendering) return;
+    rendering = true;
+    try {
+        let key = currentRoute();
+
+        // Guarda de sessão (requireUser): sem login, só a rota pública é acessível.
+        if (!Auth.isAuthenticated() && !routes[key]?.public) {
+            location.hash = 'login';
+            return;
+        }
+        if (Auth.isAuthenticated() && key === 'login') {
+            location.hash = 'dashboard';
+            return;
+        }
+
+        const route = routes[key] ?? routes.dashboard;
+        if (!routes[key]) key = 'dashboard';
+
+        document.body.classList.toggle('logged-out', !Auth.isAuthenticated());
+        syncChrome(key);
+
+        // Guarda de perfil (requireAdmin / controle de papel).
+        if (route.roles && !Auth.canAccess(route.roles)) {
+            app.innerHTML = ui.layout('Acesso negado', 'Seu perfil não tem permissão para este módulo.')
+                + ui.panel('Permissão necessária', `<div class="empty-state">Fale com um administrador para liberar o acesso (perfis permitidos: ${route.roles.join(', ')}).</div>`);
+            return;
+        }
+
+        if (Auth.isAuthenticated()) await store.refresh();
+        app.innerHTML = route.render(ctx);
+        route.bind?.(ctx);
+        await route.mount?.(ctx); // gráficos (Chart.js) e calendário (FullCalendar)
+    } catch (error) {
+        app.innerHTML = ui.layout('Erro ao carregar', 'Não foi possível concluir a operação.')
+            + ui.panel('Detalhes', `<div class="empty-state">${ui.escapeHtml(error.message)}</div>`);
+    } finally {
+        rendering = false;
     }
-    if (Auth.isAuthenticated() && key === 'login') {
-        location.hash = 'dashboard';
-        return;
-    }
-
-    const route = routes[key] ?? routes.dashboard;
-    if (!routes[key]) key = 'dashboard';
-
-    document.body.classList.toggle('logged-out', !Auth.isAuthenticated());
-    syncChrome(key);
-
-    // Guarda de perfil (requireAdmin / controle de papel).
-    if (route.roles && !Auth.canAccess(route.roles)) {
-        app.innerHTML = ui.layout('Acesso negado', 'Seu perfil não tem permissão para este módulo.')
-            + ui.panel('Permissão necessária', `<div class="empty-state">Fale com um administrador para liberar o acesso (perfis permitidos: ${route.roles.join(', ')}).</div>`);
-        return;
-    }
-
-    app.innerHTML = route.render(ctx);
-    route.bind?.(ctx);
 }
 
 function syncChrome(key) {
@@ -91,6 +106,12 @@ function syncChrome(key) {
         if (roles) link.style.display = Auth.canAccess(roles) ? '' : 'none';
     });
     document.querySelector('#breadcrumb-current').textContent = routes[key]?.title ?? 'Visão geral';
+
+    const badge = document.querySelector('#backend-badge');
+    if (badge) {
+        badge.textContent = BACKEND_MODE === 'supabase' ? 'Supabase conectado' : 'Modo demonstração local';
+        badge.classList.toggle('remote', BACKEND_MODE === 'supabase');
+    }
 
     const user = Auth.user();
     const chip = document.querySelector('#user-chip');
@@ -102,8 +123,10 @@ function syncChrome(key) {
 
 // --- Modais de criação (formulários com os mesmos campos do backend PHP) ---
 
+/** Apenas as obras que o usuário pode acessar (responsável vê só as designadas). */
 function obraOptions() {
-    return store.state.obras.map(item => `<option value="${item.id}">${ui.escapeHtml(item.name)}</option>`).join('');
+    return store.obrasFor(Auth.user())
+        .map(item => `<option value="${item.id}">${ui.escapeHtml(item.name)}</option>`).join('');
 }
 
 function categoryOptions() {
@@ -111,7 +134,7 @@ function categoryOptions() {
         .map(([key, label]) => `<option value="${key}">${label}</option>`).join('');
 }
 
-function openEntityModal(type) {
+function openEntityModal(type, prefillDate) {
     if (type === 'obra') {
         ui.openModal('Nova obra', `
             <div class="form-grid">
@@ -119,17 +142,12 @@ function openEntityModal(type) {
                 <div class="form-field"><label for="f-city">Cidade / UF</label><input class="field" id="f-city" name="cidade" required></div>
                 <div class="form-field"><label for="f-budget">Orçamento (R$)</label><input class="field" id="f-budget" name="orcamento" type="number" min="0" step="0.01" required></div>
             </div>`,
-            data => {
-                store.state.obras.push({
-                    id: store.nextId(store.state.obras),
+            async data => {
+                await store.addObra({
                     name: Validator.requiredText(data.nome, 'o nome do projeto'),
                     city: Validator.requiredText(data.cidade, 'a cidade'),
-                    status: 'Planejamento',
-                    progress: 0,
                     budget: Validator.nonNegativeNumber(data.orcamento, 'o orçamento'),
                 });
-                store.log(`Obra "${data.nome}" criada.`);
-                store.save();
             },
             () => { render(); ui.notify('Obra adicionada.'); });
     }
@@ -139,7 +157,7 @@ function openEntityModal(type) {
             <div class="form-grid">
                 <div class="form-field full"><label for="f-title">Título</label><input class="field" id="f-title" name="titulo" required></div>
                 <div class="form-field"><label for="f-obra">Obra</label><select class="field" id="f-obra" name="obra_id">${obraOptions()}</select></div>
-                <div class="form-field"><label for="f-date">Prazo</label><input class="field" id="f-date" name="data_limite" type="date" required></div>
+                <div class="form-field"><label for="f-date">Prazo</label><input class="field" id="f-date" name="data_limite" type="date" value="${prefillDate ?? ''}" required></div>
                 <div class="form-field full"><label for="f-desc">Descrição</label><textarea class="field" id="f-desc" name="descricao" rows="3"></textarea></div>
             </div>`,
             data => activityService.createProjectActivity(data),
@@ -159,6 +177,37 @@ function openEntityModal(type) {
             data => financialService.register(data),
             () => { render(); ui.notify('Lançamento salvo.'); });
     }
+
+    if (type === 'budget') {
+        ui.openModal('Definir orçamento', `
+            <div class="form-grid">
+                <div class="form-field"><label for="f-bobra">Obra</label><select class="field" id="f-bobra" name="obra_id">${obraOptions()}</select></div>
+                <div class="form-field"><label for="f-bvalue">Orçamento (R$)</label><input class="field" id="f-bvalue" name="valor_orcado" type="number" min="0" step="0.01" required></div>
+            </div>`,
+            data => financialService.setBudget(data),
+            () => { render(); ui.notify('Orçamento atualizado.'); });
+    }
+
+    if (type === 'document') {
+        ui.openModal('Adicionar documento', `
+            <div class="form-grid">
+                <div class="form-field"><label for="f-dobra">Obra</label><select class="field" id="f-dobra" name="obra_id">${obraOptions()}</select></div>
+                <div class="form-field"><label for="f-dtype">Tipo</label><select class="field" id="f-dtype" name="tipo">
+                    <option>Geral</option><option>Nota fiscal</option><option>Contrato</option><option>Planta</option><option>Vistoria</option><option>Alvará</option>
+                </select></div>
+                <div class="form-field full"><label for="f-dfile">Arquivo</label><input class="field" id="f-dfile" name="arquivo" type="file" required></div>
+            </div>`,
+            async data => {
+                const file = document.querySelector('#f-dfile').files[0];
+                if (!file) throw new Error('Selecione um arquivo.');
+                await store.addDocument({
+                    obraId: Validator.id(data.obra_id),
+                    file,
+                    type: data.tipo,
+                });
+            },
+            () => { render(); ui.notify('Documento adicionado.'); });
+    }
 }
 
 // --- Delegação global de eventos (ações de tabela e navegação auxiliar) ---
@@ -168,6 +217,8 @@ document.addEventListener('click', event => {
     if (action === 'new-obra') openEntityModal('obra');
     if (action === 'new-activity') openEntityModal('activity');
     if (action === 'new-transaction') openEntityModal('transaction');
+    if (action === 'new-budget') openEntityModal('budget');
+    if (action === 'new-document') openEntityModal('document');
     if (action === 'close-modal') ui.closeModal();
 
     const routeLink = event.target.closest('[data-route-link]')?.dataset.routeLink;
@@ -176,53 +227,83 @@ document.addEventListener('click', event => {
     const deletion = event.target.closest('[data-delete]')?.dataset.delete;
     if (deletion) {
         const [type, id] = deletion.split(':');
-        if (type === 'obra') store.state.obras = store.state.obras.filter(item => item.id !== Number(id));
-        if (type === 'activity') activityService.remove(id);
-        if (type === 'transaction') financialService.remove(id);
-        if (type === 'document') store.state.documents = store.state.documents.filter(item => item.id !== Number(id));
-        store.save();
-        render();
-        ui.notify('Registro excluído.');
+        if (!confirm('Confirmar exclusão?')) return;
+        void (async () => {
+            try {
+                if (type === 'obra') await store.deleteObra(id);
+                if (type === 'activity') await activityService.remove(id);
+                if (type === 'transaction') await financialService.remove(id);
+                if (type === 'document') await store.deleteDocument(id);
+                ui.closeModal();
+                render();
+                ui.notify('Registro excluído.');
+            } catch (error) {
+                ui.notify(error.message);
+            }
+        })();
     }
 
     const toggleStatus = event.target.closest('[data-toggle-status]')?.dataset.toggleStatus;
     if (toggleStatus) {
-        activityService.cycleStatus(toggleStatus);
-        render();
+        void (async () => {
+            try {
+                await activityService.cycleStatus(toggleStatus);
+                ui.closeModal();
+                render();
+            } catch (error) {
+                ui.notify(error.message);
+            }
+        })();
     }
 
-    const closeTicket = event.target.closest('[data-close-ticket]')?.dataset.closeTicket;
-    if (closeTicket) {
-        const ticket = store.state.chamados.find(item => item.id === Number(closeTicket));
-        if (ticket) {
-            ticket.status = 'Fechado';
-            store.log(`Chamado "${ticket.title}" encerrado.`);
-            store.save();
-            render();
-            ui.notify('Chamado encerrado.');
-        }
+    const chamadoStatus = event.target.closest('[data-chamado-status]')?.dataset.chamadoStatus;
+    if (chamadoStatus) {
+        const [id, status] = chamadoStatus.split(':');
+        void (async () => {
+            try {
+                await store.setChamadoStatus(id, status);
+                render();
+                ui.notify(status === 'fechado' ? 'Chamado encerrado.' : 'Chamado atualizado.');
+            } catch (error) {
+                ui.notify(error.message);
+            }
+        })();
+    }
+
+    const download = event.target.closest('[data-download]')?.dataset.download;
+    if (download) {
+        void (async () => {
+            try {
+                const doc = store.state.documents.find(item => item.id === Number(download));
+                if (doc) window.open(await store.documentUrl(doc), '_blank', 'noopener');
+            } catch (error) {
+                ui.notify(error.message);
+            }
+        })();
     }
 
     const toggleUser = event.target.closest('[data-toggle-user]')?.dataset.toggleUser;
     if (toggleUser && Auth.isAdmin()) {
-        const user = store.state.users.find(item => item.id === Number(toggleUser));
-        if (user) {
-            user.active = !user.active;
-            store.log(`Acesso de ${user.name} ${user.active ? 'liberado' : 'bloqueado'}.`);
-            store.save();
-            render();
-        }
+        void (async () => {
+            try {
+                await store.toggleUser(toggleUser);
+                render();
+            } catch (error) {
+                ui.notify(error.message);
+            }
+        })();
     }
 });
 
 // Logout: o link "Sair" (data-route="login") encerra a sessão antes de navegar.
 document.querySelector('[data-route="login"]').addEventListener('click', () => {
-    if (Auth.isAuthenticated()) Auth.logout();
+    if (Auth.isAuthenticated()) void Auth.logout();
 });
 
 document.querySelector('#reset-data').addEventListener('click', () => {
+    if (BACKEND_MODE !== 'local') return; // sem seed para restaurar no modo Supabase
     if (confirm('Restaurar os dados de demonstração? A sessão atual será encerrada.')) {
-        Auth.logout();
+        void Auth.logout();
         store.reset();
         location.hash = 'login';
         render();
@@ -236,7 +317,12 @@ document.querySelector('#menu-toggle').addEventListener('click', () => {
 
 window.addEventListener('hashchange', () => {
     document.querySelector('#sidebar').classList.remove('open');
-    render();
+    void render();
 });
 
-render();
+// Boot: restaura a sessão (Supabase Auth ou sessão local) e carrega os dados.
+void (async () => {
+    await Auth.init();
+    await store.init();
+    await render();
+})();

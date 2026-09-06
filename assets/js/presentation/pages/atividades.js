@@ -16,6 +16,12 @@ function rows(store, items) {
     }).join('') : '<tr><td colspan="5"><div class="empty-state">Nenhuma atividade encontrada.</div></td></tr>';
 }
 
+/** Cronograma limitado às obras que o usuário pode acessar. */
+function visibleActivities(ctx) {
+    const obraIds = new Set(ctx.store.obrasFor(ctx.auth.user()).map(obra => obra.id));
+    return ctx.store.state.activities.filter(item => obraIds.has(item.obraId));
+}
+
 export function render() {
     return layout('Atividades', 'Cronograma operacional e pendências da equipe.',
         '<button class="button button-primary" data-action="new-activity">+ Nova atividade</button>')
@@ -37,8 +43,8 @@ export function bind(ctx) {
     const tbody = document.querySelector('#activities-table');
     const paint = filter => {
         const items = filter === 'todas'
-            ? ctx.store.state.activities
-            : ctx.store.state.activities.filter(item => displayStatus(item) === filter);
+            ? visibleActivities(ctx)
+            : visibleActivities(ctx).filter(item => displayStatus(item) === filter);
         tbody.innerHTML = rows(ctx.store, items);
     };
     paint('todas');

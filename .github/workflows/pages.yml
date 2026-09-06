@@ -1,11 +1,15 @@
+# Deploy automático do painel estático no GitHub Pages.
+# Publica apenas os arquivos da SPA (index.html + assets/), sem o backend PHP.
+# Ative em: Settings → Pages → Source: "GitHub Actions".
 name: Deploy GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
+  contents: read
   pages: write
   id-token: write
 
@@ -26,10 +30,17 @@ jobs:
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
 
+      - name: Preparar site estático (somente arquivos da SPA)
+        run: |
+          mkdir -p dist
+          cp index.html dist/
+          cp index.html dist/404.html
+          cp -r assets dist/assets
+
       - name: Publicar artefato estático
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: dist
 
       - name: Deploy
         id: deployment

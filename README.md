@@ -21,9 +21,26 @@ Sistema web para gestão administrativa, financeira e operacional de obras da Co
 
 O **Auxiliar Obras** foi projetado para descentralizar e organizar a gestão de reformas e construções. A plataforma permite monitorar fluxos de caixa, agendamentos, cronogramas operacionais (via *Cron Jobs*) e repositório centralizado de comprovantes/anexos.
 
-## Publicação no GitHub Pages
+## Publicação no GitHub Pages e na Vercel
 
-O arquivo `index.html` é uma versão estática e funcional do painel, compatível com o GitHub Pages. Ela inclui login (demonstração), dashboard, obras, atividades, calendário, financeiro, documentos, relatórios (CSV), chamados, usuários, logs e perfil — com cadastros, filtros, alteração de status e exclusões persistidos no `localStorage` do navegador.
+O arquivo `index.html` é uma SPA estática completa (login, dashboard com gráficos Chart.js, obras, atividades, **calendário interativo FullCalendar com abas por obra**, financeiro, documentos, relatórios CSV, chamados, usuários, logs e perfil), compatível com **GitHub Pages** e **Vercel**. Ela funciona em dois modos:
+
+| Modo | Quando | Dados |
+|------|--------|-------|
+| **Supabase** (produção) | `config.js` preenchido com URL + anon key | PostgreSQL real, autenticação Supabase Auth, isolamento por responsável via RLS, upload de documentos no Storage |
+| **Demonstração local** | Sem configuração | `localStorage` do navegador, perfis de teste `admin@auxiliarobras.local / demo123` etc. |
+
+### Configurar o Supabase (banco de dados + permissões)
+
+1. Crie um projeto gratuito em [supabase.com](https://supabase.com).
+2. No **SQL Editor**, execute na ordem:
+   - `database/migrations/supabase_postgresql_schema.sql` (tabelas)
+   - `database/migrations/20260905_supabase_auth_rls.sql` (Auth + RLS + bucket `documentos`)
+3. Crie o primeiro administrador em **Authentication → Users → Add user** (marque *Auto Confirm*) e vincule-o seguindo o passo final comentado no SQL de RLS.
+4. Desative a confirmação de e-mail em **Authentication → Providers → Email** (para usuários criados pelo admin entrarem direto).
+5. Copie **Project URL** e **anon public key** (Project Settings → API) para `assets/js/infrastructure/supabase/config.js` — ou crie `assets/js/infrastructure/supabase/config.local.js` com `window.__AUXILIAR_OBRAS_CONFIG__ = { url, anonKey }` (não commitado).
+
+**Isolamento por responsável:** o admin cadastra o usuário (página *Usuários*), depois o designa às obras em *Obras → Responsáveis*. As políticas RLS garantem no banco que cada responsável de igreja só lê/escreve as próprias obras — o painel, o calendário e o financeiro já chegam filtrados.
 
 ### Arquitetura da versão estática (ES Modules)
 
@@ -33,28 +50,39 @@ A versão estática espelha a arquitetura PHP, mantendo as mesmas regras de neg�
 assets/js/
 ├── app.js                                  # Bootstrap + roteador por hash + guardas de acesso
 ├── core/
-│   ├── Auth.js                             # Sessão, login e perfis (admin/suporte/colaborador) — equivale a app/Core/Auth.php
-│   └── Validator.php → Validator.js        # Validações (e-mail, texto, data, números, enums)
+│   ├── Auth.js                             # Supabase Auth OU sessão demo — equivale a app/Core/Auth.php
+│   └── Validator.js                        # Validações (e-mail, texto, data, números, enums)
 ├── domain/
 │   ├── activity/ActivityStatus.js          # pendente/em_andamento/concluida + atraso derivado
-│   └── finance/FinancialCategory.js        # material/operacional/servico/equipamento/produto
+│   ├── finance/FinancialCategory.js        # material/operacional/servico/equipamento/produto
+│   └── obra/ObraStatus.js                  # em_andamento/concluida/pausada
 ├── application/
 │   ├── activity/ActivityService.js         # Regras de atividades (equivale ao ActivityService.php)
 │   └── finance/FinancialService.js         # Lançamento = quantidade × valor unitário; orçamento
-├── infrastructure/persistence/
-│   └── LocalStore.js                       # "Repositório" localStorage (substitui os MySql*Repository)
+├── infrastructure/
+│   ├── persistence/
+│   │   ├── Store.js                        # Fachada: escolhe Supabase ou local conforme config
+│   │   ├── SupabaseStore.js                # Repositório PostgreSQL + Storage (equivale aos MySql*Repository)
+│   │   └── LocalStore.js                   # Repositório localStorage (modo demonstração)
+│   └── supabase/
+│       ├── config.js                       # URL + anon key do projeto Supabase
+│       └── SupabaseClient.js               # Cliente supabase-js (CDN)
 └── presentation/
     ├── ui.js                               # Helpers de UI (layout, badges, modal, toast)
     └── pages/                              # Uma página por módulo (dashboard, financeiro, usuários...)
 ```
 
-**Controle de acesso no modo estático:** rotas protegidas exigem login; `Usuários` é restrito a `admin` e `Logs` a `admin`/`suporte` (equivalente ao `requireAdmin`/`hasFullProjectAccess` do PHP). Perfis de teste: `admin@auxiliarobras.local / demo123`, `suporte@auxiliarobras.local / suporte123`, `obras@auxiliarobras.local / obras123`.
+**Plugins via CDN:** Chart.js 4 (gráficos do dashboard e financeiro), FullCalendar 6 (calendário interativo) e supabase-js 2 (somente no modo Supabase).
 
-### Deploy automático (GitHub Actions)
+### Deploy no GitHub Pages (automático)
 
-O workflow `.github/workflows/pages.yml` publica o site a cada push na branch `main`. Para ativar: **Settings → Pages → Source: GitHub Actions**. O site fica disponível em `https://<usuario>.github.io/Projeto_CCB_ADM_AUX.OBRAS/`.
+O workflow `.github/workflows/pages.yml` publica `index.html` + `assets/` a cada push na branch `main`/`master`. Para ativar: **Settings → Pages → Source: GitHub Actions**. O site fica em `https://<usuario>.github.io/Projeto_CCB_ADM_AUX.OBRAS/`.
 
-Esta versão não executa PHP, MySQL, sessões, uploads compartilhados ou envio de e-mails, pois o GitHub Pages serve apenas arquivos estáticos. O backend PHP original continua disponível para hospedagens com PHP e banco de dados, acessando `index.php` e as páginas em `page/`.
+### Deploy na Vercel
+
+O `vercel.json` já está configurado (URLs limpas + headers de segurança). Basta importar o repositório em [vercel.com/new](https://vercel.com/new) — framework **Other**, sem build command, diretório de saída raiz. O mesmo modo dual (Supabase/demonstração) funciona na Vercel.
+
+O backend PHP original (sessões, MySQL, e-mails via fila/cron, PDF) continua disponível para hospedagens com PHP, acessando `index.php` e as páginas em `page/`.
 
 ---
 

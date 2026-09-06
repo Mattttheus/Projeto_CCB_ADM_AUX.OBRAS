@@ -12,6 +12,16 @@
         href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="assets/css/static-app.css">
+    <!-- Plugins (CDN): gráficos e calendário interativo -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"
+        integrity="sha384-JUh163oCRItcbPme8pYnROHQMC6fNKTBWtRG3I3I0erJkzNgL7uxKlNwcrcFKeqF" crossorigin="anonymous"
+        defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"
+        integrity="sha384-B1OFx8Gy9GjPu8UbUyXbGQpzll9ubAUQ9agInFJ8NnD7nYG1u/CLR+Sqr5yifl4q" crossorigin="anonymous"
+        defer></script>
+    <!-- Opcional: sobrescreva as credenciais sem commitar, criando config.local.js
+         com window.__AUXILIAR_OBRAS_CONFIG__ = { url: '...', anonKey: '...' } -->
+    <script src="assets/js/infrastructure/supabase/config.local.js" onerror="this.remove()"></script>
 </head>
 
 <body>
@@ -39,7 +49,8 @@
                 <a href="#logs" data-route="logs" data-roles="admin suporte"><span>≡</span> Logs de e-mail</a>
                 <a href="#login" data-route="login"><span>↪</span> Sair</a>
             </nav>
-            <div class="sidebar-footer"><span class="status-dot"></span> Dados locais ativos</div>
+            <div class="sidebar-footer"><span class="status-dot"></span> <span id="backend-badge">Modo demonstração
+                    local</span></div>
         </aside>
 
         <main class="main-content">

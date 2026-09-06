@@ -765,3 +765,197 @@ body.logged-out .page-container {
     width: 100%;
     max-width: 460px;
 }
+
+/* ============================================================
+   Incrementos 2026-09 — calendário interativo, gráficos e
+   designação de responsáveis (mesma linguagem visual do tema)
+   ============================================================ */
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Indicador de backend no rodapé da sidebar */
+#backend-badge.remote {
+    color: #8fd3a8;
+    font-weight: 600;
+}
+
+/* Abas por obra no calendário */
+.tab-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.tab {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--muted);
+    font: 600 12.5px "DM Sans", sans-serif;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: .15s;
+}
+
+.tab:hover {
+    border-color: var(--green-dark);
+    color: var(--ink);
+}
+
+.tab.active {
+    background: var(--green-dark);
+    border-color: var(--green-dark);
+    color: #fff;
+}
+
+/* Legenda e contador de atrasadas */
+.calendar-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    color: var(--muted);
+}
+
+.legend-item i {
+    width: 11px;
+    height: 11px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.legend-spacer {
+    flex: 1;
+}
+
+/* FullCalendar integrado ao tema */
+#calendar {
+    min-height: 650px;
+    font-family: "DM Sans", sans-serif;
+}
+
+#calendar .fc-toolbar-title {
+    font: 600 19px "Space Grotesk", sans-serif;
+    color: var(--ink);
+}
+
+#calendar .fc-button-primary {
+    background: var(--green-dark);
+    border-color: var(--green-dark);
+    font: 600 12px "DM Sans", sans-serif;
+    text-transform: capitalize;
+}
+
+#calendar .fc-button-primary:hover,
+#calendar .fc-button-primary:not(:disabled).fc-button-active {
+    background: #3a3a3a;
+    border-color: #3a3a3a;
+}
+
+#calendar .fc-daygrid-day-number,
+#calendar .fc-col-header-cell-cushion {
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 13px;
+}
+
+#calendar .fc-event {
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* Evento em atraso: contorno pulsante discreto */
+#calendar .fc-event.fc-overdue {
+    box-shadow: 0 0 0 2px rgba(220, 38, 38, .35);
+    font-weight: 700;
+}
+
+/* Grade dos gráficos Chart.js */
+.chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+    margin-bottom: 22px;
+}
+
+.chart-box {
+    position: relative;
+    height: 280px;
+}
+
+/* Lista de checkboxes (designar responsáveis) */
+.check-list {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+    max-height: 300px;
+    overflow: auto;
+}
+
+.check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.check-item:hover {
+    background: var(--paper);
+}
+
+.check-item input {
+    accent-color: var(--green-dark);
+    width: 16px;
+    height: 16px;
+}
+
+.modal-body {
+    padding-top: 4px;
+}
+
+.modal-body .form-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Chips de obras designadas (dashboard de acessos) */
+.chip {
+    display: inline-block;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px 10px;
+    margin: 2px 4px 2px 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.table-actions {
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .chart-grid {
+        grid-template-columns: 1fr;
+    }
+}

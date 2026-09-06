@@ -1,3 +1,6 @@
 .env
 /vendor/
 /uploads/
+
+# Credenciais locais do Supabase (use no lugar de editar config.js)
+assets/js/infrastructure/supabase/config.local.js
