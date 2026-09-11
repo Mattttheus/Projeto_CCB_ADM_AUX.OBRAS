@@ -317,6 +317,21 @@ document.addEventListener('click', event => {
     }
 });
 
+// Seleção direta de status de uma atividade/manutenção (ex.: obraDetalhe.js).
+document.addEventListener('change', event => {
+    const statusSelect = event.target.closest('[data-status-select]');
+    if (!statusSelect) return;
+    const id = statusSelect.dataset.statusSelect;
+    void (async () => {
+        try {
+            await activityService.changeStatus(id, statusSelect.value);
+            render();
+        } catch (error) {
+            ui.notify(error.message);
+        }
+    })();
+});
+
 // Logout: o link "Sair" (data-route="login") encerra a sessão antes de navegar.
 document.querySelector('[data-route="login"]').addEventListener('click', () => {
     if (Auth.isAuthenticated()) void Auth.logout();
