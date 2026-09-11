@@ -33,3 +33,12 @@ export function nextStatus(current) {
     const order = allStatuses();
     return order[(order.indexOf(current) + 1) % order.length];
 }
+
+/** Manutenção recorrente (tipo='recorrente' no banco): dia_semana segue Date.getDay() (0=domingo). */
+export const WEEKDAY_LABELS = Object.freeze([
+    'Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado',
+]);
+
+export function isMaintenance(activity) {
+    return activity.type === 'recorrente';
+}

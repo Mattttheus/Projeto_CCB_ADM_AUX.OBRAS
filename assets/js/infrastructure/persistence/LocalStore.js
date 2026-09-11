@@ -156,10 +156,10 @@ export class LocalStore {
 
     // --- Atividades ---
 
-    async addActivity({ obraId, title, description, date, status }) {
+    async addActivity({ obraId, title, description, date, status, type = 'unico', dayOfWeek = null }) {
         this.state.activities.push({
             id: this.nextId(this.state.activities),
-            obraId: Number(obraId), title, description, date, status,
+            obraId: Number(obraId), title, description, date, status, type, dayOfWeek,
         });
         this.log(`Atividade "${title}" criada.`);
         this.save();

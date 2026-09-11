@@ -1,5 +1,5 @@
 // Presentation/Pages — equivalente ao cronograma de page/dashboard.php e calendario.php
-import { displayStatus, ACTIVITY_STATUS_LABELS } from '../../domain/activity/ActivityStatus.js';
+import { displayStatus, ACTIVITY_STATUS_LABELS, WEEKDAY_LABELS } from '../../domain/activity/ActivityStatus.js';
 import { layout, panel, badge, formatDate, escapeHtml } from '../ui.js';
 
 function rows(store, items) {
@@ -7,9 +7,9 @@ function rows(store, items) {
         const shown = displayStatus(item);
         return `
         <tr>
-            <td><strong>${escapeHtml(item.title)}</strong></td>
+            <td><strong>${escapeHtml(item.title)}</strong>${item.type === 'recorrente' ? ' <span class="row-meta">(manutenção)</span>' : ''}</td>
             <td>${escapeHtml(store.obraName(item.obraId))}</td>
-            <td>${formatDate(item.date)}</td>
+            <td>${item.type === 'recorrente' ? `Toda ${WEEKDAY_LABELS[item.dayOfWeek] ?? '—'}` : formatDate(item.date)}</td>
             <td><button class="table-action" data-toggle-status="${item.id}" title="Avançar status">${badge(shown, ACTIVITY_STATUS_LABELS[shown])}</button></td>
             <td><button class="table-action" data-delete="activity:${item.id}">Excluir</button></td>
         </tr>`;

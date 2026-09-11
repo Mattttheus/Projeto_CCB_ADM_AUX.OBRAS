@@ -39,7 +39,7 @@ export function bind(ctx) {
             ]),
             ...store.state.activities.filter(item => obraIds.has(item.obraId)).map(item => [
                 'Atividade', item.title, store.obraName(item.obraId),
-                ACTIVITY_STATUS_LABELS[displayStatus(item)], '', '', '', item.date,
+                ACTIVITY_STATUS_LABELS[displayStatus(item)], '', '', '', item.date ?? '',
             ]),
             ...store.state.transactions.filter(item => obraIds.has(item.obraId)).map(item => [
                 'Despesa', item.description, store.obraName(item.obraId),

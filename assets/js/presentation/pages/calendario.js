@@ -71,7 +71,8 @@ export function mount(ctx) {
         calendar = null;
     }
 
-    const events = activitiesFor(ctx).map(item => {
+    // Manutenção recorrente (type='recorrente') não tem uma data fixa — não entra no calendário mensal.
+    const events = activitiesFor(ctx).filter(item => item.date).map(item => {
         const shown = displayStatus(item);
         return {
             id: String(item.id),

@@ -555,6 +555,8 @@ a {
     background: transparent;
     font-size: 12px;
     font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
 }
 
 .empty-state {

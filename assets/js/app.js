@@ -10,6 +10,7 @@ import { FINANCIAL_CATEGORY_LABELS } from './domain/finance/FinancialCategory.js
 import * as ui from './presentation/ui.js';
 import * as dashboard from './presentation/pages/dashboard.js';
 import * as obras from './presentation/pages/obras.js';
+import * as obraDetalhe from './presentation/pages/obraDetalhe.js';
 import * as atividades from './presentation/pages/atividades.js';
 import * as calendario from './presentation/pages/calendario.js';
 import * as financeiro from './presentation/pages/financeiro.js';
@@ -29,6 +30,7 @@ const routes = {
     login: { title: 'Login', public: true, render: conta.renderLogin, bind: conta.bindLogin },
     dashboard: { title: 'Visão geral', render: dashboard.render, mount: dashboard.mount },
     obras: { title: 'Obras', render: obras.render, bind: obras.bind },
+    obra: { title: 'Obra', render: obraDetalhe.render, bind: obraDetalhe.bind },
     atividades: { title: 'Atividades', render: atividades.render, bind: atividades.bind },
     calendario: { title: 'Calendário', render: calendario.render, bind: calendario.bind, mount: calendario.mount },
     financeiro: { title: 'Financeiro', render: financeiro.render, bind: financeiro.bind, mount: financeiro.mount },
@@ -52,8 +54,10 @@ const ctx = {
     openActivityModal: (prefillDate) => openEntityModal('activity', prefillDate),
 };
 
+/** A parte antes de "?" define a rota; parâmetros (ex.: #obra?id=5) ficam em location.hash
+ *  e são lidos diretamente pela página (ver obraDetalhe.js). */
 function currentRoute() {
-    return location.hash.slice(1) || 'dashboard';
+    return (location.hash.slice(1) || 'dashboard').split('?')[0];
 }
 
 let rendering = false;
@@ -140,13 +144,13 @@ function openEntityModal(type, prefillDate, presetObraId) {
             <div class="form-grid">
                 <div class="form-field full"><label for="f-name">Nome do projeto</label><input class="field" id="f-name" name="nome" required></div>
                 <div class="form-field"><label for="f-city">Cidade / UF</label><input class="field" id="f-city" name="cidade" required></div>
-                <div class="form-field"><label for="f-budget">Orçamento (R$)</label><input class="field" id="f-budget" name="orcamento" type="number" min="0" step="0.01" required></div>
+                <div class="form-field"><label for="f-budget">Orçamento (R$) <span class="row-meta">opcional</span></label><input class="field" id="f-budget" name="orcamento" type="number" min="0" step="0.01" placeholder="Defina depois, se preferir"></div>
             </div>`,
             async data => {
                 await store.addObra({
                     name: Validator.requiredText(data.nome, 'o nome do projeto'),
                     city: Validator.requiredText(data.cidade, 'a cidade'),
-                    budget: Validator.nonNegativeNumber(data.orcamento, 'o orçamento'),
+                    budget: data.orcamento === '' ? 0 : Validator.nonNegativeNumber(data.orcamento, 'o orçamento'),
                 });
             },
             () => { render(); ui.notify('Obra adicionada.'); });
@@ -162,6 +166,21 @@ function openEntityModal(type, prefillDate, presetObraId) {
             </div>`,
             data => activityService.createProjectActivity(data),
             () => { render(); ui.notify('Atividade adicionada.'); });
+    }
+
+    if (type === 'maintenance') {
+        ui.openModal('Nova manutenção recorrente', `
+            <div class="form-grid">
+                <div class="form-field full"><label for="f-mtitle">Título</label><input class="field" id="f-mtitle" name="titulo" required></div>
+                <div class="form-field"><label for="f-mobra">Obra</label><select class="field" id="f-mobra" name="obra_id">${obraOptions(presetObraId)}</select></div>
+                <div class="form-field"><label for="f-mday">Repete toda(o)</label><select class="field" id="f-mday" name="dia_semana">
+                    <option value="1">Segunda-feira</option><option value="2">Terça-feira</option><option value="3">Quarta-feira</option>
+                    <option value="4">Quinta-feira</option><option value="5">Sexta-feira</option><option value="6">Sábado</option><option value="0">Domingo</option>
+                </select></div>
+                <div class="form-field full"><label for="f-mdesc">Descrição</label><textarea class="field" id="f-mdesc" name="descricao" rows="3"></textarea></div>
+            </div>`,
+            data => activityService.createMaintenanceActivity(data),
+            () => { render(); ui.notify('Manutenção recorrente cadastrada.'); });
     }
 
     if (type === 'transaction') {
@@ -218,6 +237,7 @@ document.addEventListener('click', event => {
     const presetObra = actionTarget?.dataset.presetObra;
     if (action === 'new-obra') openEntityModal('obra');
     if (action === 'new-activity') openEntityModal('activity', undefined, presetObra);
+    if (action === 'new-maintenance') openEntityModal('maintenance', undefined, presetObra);
     if (action === 'new-transaction') openEntityModal('transaction', undefined, presetObra);
     if (action === 'new-budget') openEntityModal('budget', undefined, presetObra);
     if (action === 'new-document') openEntityModal('document', undefined, presetObra);

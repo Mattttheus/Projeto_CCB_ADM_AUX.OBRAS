@@ -17,7 +17,9 @@ export function render(ctx) {
     const overdue = activities.filter(item => displayStatus(item) === 'atrasada').length;
     const done = activities.filter(item => item.status === 'concluida').length;
     const progress = activities.length ? Math.round((done / activities.length) * 100) : 0;
-    const upcoming = [...activities].sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
+    // Manutenção recorrente (type='recorrente') não tem prazo fixo — fica fora do "próximas atividades".
+    const upcoming = activities.filter(item => item.date)
+        .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
 
     const obraBars = obras.map(item => {
         const obraProgress = store.obraProgress(item.id);

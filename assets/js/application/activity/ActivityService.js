@@ -20,7 +20,23 @@ export class ActivityService {
         const obraId = Validator.id(input.obra_id);
         const description = String(input.descricao ?? '').trim();
 
-        await this.activities.addActivity({ obraId, title, description, date, status });
+        await this.activities.addActivity({ obraId, title, description, date, status, type: 'unico' });
+    }
+
+    /** Manutenção recorrente da obra: sem prazo fixo, repete num dia da semana (0=domingo .. 6=sábado). */
+    async createMaintenanceActivity(input) {
+        const title = Validator.requiredText(input.titulo, 'o título');
+        const obraId = Validator.id(input.obra_id);
+        const description = String(input.descricao ?? '').trim();
+        const dayOfWeek = Number(input.dia_semana);
+        if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
+            throw new Error('Selecione um dia da semana válido.');
+        }
+
+        await this.activities.addActivity({
+            obraId, title, description, date: null, status: ActivityStatus.PENDING,
+            type: 'recorrente', dayOfWeek,
+        });
     }
 
     async changeStatus(activityId, status) {

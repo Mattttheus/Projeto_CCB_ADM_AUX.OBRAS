@@ -35,6 +35,8 @@ const mapActivity = row => ({
     description: row.descricao ?? '',
     date: row.data_limite ?? row.data_atividade,
     status: row.status,
+    type: row.tipo ?? 'unico',
+    dayOfWeek: row.dia_semana,
 });
 
 const mapTransaction = row => ({
@@ -212,14 +214,16 @@ export class SupabaseStore {
 
     // --- Atividades ---
 
-    async addActivity({ obraId, title, description, date, status }) {
+    async addActivity({ obraId, title, description, date, status, type = 'unico', dayOfWeek = null }) {
+        const isMaintenance = type === 'recorrente';
         ensured(await this.db.from('atividades').insert({
             obra_id: Number(obraId),
             titulo: title,
             descricao: description || null,
-            data_atividade: date,
-            data_limite: date,
-            tipo: 'unico',
+            data_atividade: isMaintenance ? null : date,
+            data_limite: isMaintenance ? null : date,
+            tipo: type,
+            dia_semana: isMaintenance ? dayOfWeek : null,
             status,
         }).select().single(), 'Erro ao criar atividade');
         await this.refresh();
