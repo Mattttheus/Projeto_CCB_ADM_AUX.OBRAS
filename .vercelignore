@@ -1,0 +1,27 @@
+# A Vercel publica só a SPA estática (index.html + assets/), igual ao
+# GitHub Pages (.github/workflows/pages.yml). Sem isso, o backend PHP
+# (app/, page/, config/, index.php...) sobe junto e a Vercel passa a
+# servir index.php como texto bruto em "/" em vez do index.html da SPA
+# (ela não executa PHP) — além de expor o código-fonte do backend.
+
+index.php
+app/
+page/
+config/
+database/
+cron/
+uploads/
+deploy/
+docker/
+vendor/
+dist/
+
+composer.json
+composer.lock
+composer.phar
+Dockerfile
+.dockerignore
+.htaccess
+.user.ini
+.env
+.env.example
