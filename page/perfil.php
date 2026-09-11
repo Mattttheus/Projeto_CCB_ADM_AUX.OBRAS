@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($titulo_chamado) || empty($descricao_chamado)) {
             $error = 'Preencha o título e a descrição do chamado.';
         } else {
-            $stmtChamado = $conn->prepare("INSERT INTO chamados (usuario_id, titulo, descricao, status, data_criacao) VALUES (?, ?, ?, 'Aberto', NOW())");
+            $stmtChamado = $conn->prepare("INSERT INTO chamados (obra_id, usuario_id, titulo, descricao, prioridade, status, data_abertura) VALUES (NULL, ?, ?, ?, 'verde', 'aberto', NOW())");
             
             if ($stmtChamado) {
                 $stmtChamado->bind_param('iss', $user_id, $titulo_chamado, $descricao_chamado);
@@ -44,51 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 1. Ação para cadastrar Matheus Vinicius automaticamente como Suporte
-    if ($error === '' && isset($_POST['cadastrar_matheus_suporte']) && $tem_acesso_gerenciamento) {
-        $nome_matheus = "Matheus Vinicius";
-        $email_matheus = "matheus.suporte@auxiliarobras.com.br";
-        $senha_padrao = password_hash("Mudar@123", PASSWORD_DEFAULT);
-        $role_suporte = "suporte";
-
-        $stmtCheckM = $conn->prepare("SELECT id FROM usuarios WHERE email = ?");
-        $stmtCheckM->bind_param('s', $email_matheus);
-        $stmtCheckM->execute();
-        
-        if ($stmtCheckM->get_result()->num_rows > 0) {
-            $error = 'O usuário Matheus Vinicius já está cadastrado no sistema.';
-        } else {
-            // Tentativa inteligente: detecta se a coluna é 'role' ou 'tipo' ou ambas para evitar quebras
-            $queryInsert = "INSERT INTO usuarios (nome, email, senha, role, tipo) VALUES (?, ?, ?, ?, ?)";
-            $stmtInsertM = $conn->prepare($queryInsert);
-            
-            if ($stmtInsertM) {
-                $stmtInsertM->bind_param('sssss', $nome_matheus, $email_matheus, $senha_padrao, $role_suporte, $role_suporte);
-                $executou = $stmtInsertM->execute();
-            } else {
-                // Fallback caso sua tabela use apenas uma das colunas (ex: apenas tipo ou apenas role)
-                $queryInsert = "INSERT INTO usuarios (nome, email, senha, tipo) VALUES (?, ?, ?, ?)";
-                $stmtInsertM = $conn->prepare($queryInsert);
-                if ($stmtInsertM) {
-                    $stmtInsertM->bind_param('ssss', $nome_matheus, $email_matheus, $senha_padrao, $role_suporte);
-                    $executou = $stmtInsertM->execute();
-                } else {
-                    $queryInsert = "INSERT INTO usuarios (nome, email, senha, role) VALUES (?, ?, ?, ?)";
-                    $stmtInsertM = $conn->prepare($queryInsert);
-                    $stmtInsertM->bind_param('ssss', $nome_matheus, $email_matheus, $senha_padrao, $role_suporte);
-                    $executou = $stmtInsertM->execute();
-                }
-            }
-
-            if ($executou) {
-                $success = 'Usuário "Matheus Vinicius" cadastrado com perfil Suporte! Senha provisória: Mudar@123';
-            } else {
-                $error = 'Erro ao cadastrar Matheus Vinicius: ' . $conn->error;
-            }
-        }
-    }
-
-    // 2. Ação de Cadastro de Novo Usuário Manual
+    // 1. Ação de Cadastro de Novo Usuário Manual
     if ($error === '' && isset($_POST['novo_usuario_manual']) && $tem_acesso_gerenciamento) {
         $n_nome = trim($_POST['n_nome'] ?? '');
         $n_email = filter_var(trim($_POST['n_email'] ?? ''), FILTER_VALIDATE_EMAIL);
@@ -130,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 3. Ação de Alteração/Edição de Usuário (Corrigido com Fallback de colunas)
+    // 2. Ação de Alteração/Edição de Usuário (Corrigido com Fallback de colunas)
     if ($error === '' && isset($_POST['editar_usuario_sistema']) && $tem_acesso_gerenciamento) {
         $edit_id = (int)($_POST['edit_id'] ?? 0);
         $edit_nome = trim($_POST['edit_nome'] ?? '');
@@ -202,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 4. Ação de Remoção/Exclusão de Usuário
+    // 3. Ação de Remoção/Exclusão de Usuário
     if ($error === '' && isset($_POST['remover_usuario_sistema']) && $tem_acesso_gerenciamento) {
         $remove_id = (int)($_POST['remove_id'] ?? 0);
         if ($remove_id === $user_id) {
@@ -223,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Envie documentos pela página da obra.';
     }
 
-    // 6. Atualização de Perfil Próprio
+    // 4. Atualização de Perfil Próprio
     if ($error === '' && isset($_POST['update_profile'])) {
         $nome = trim($_POST['nome'] ?? '');
         $email = filter_var(trim($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
@@ -239,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 7. Reset/Troca forçada de senhas
+    // 5. Reset/Troca forçada de senhas
     if ($error === '' && isset($_POST['reset_user_password']) && $tem_acesso_gerenciamento) {
         $target_user_id = (int)($_POST['target_user_id'] ?? 0);
         $forced_password = $_POST['nova_senha_forcada'] ?? '';
@@ -253,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 8. Enfileira lembrete para o usuário que possui chamados pendentes
+    // 6. Enfileira lembrete para o usuário que possui chamados pendentes
     if ($error === '' && isset($_POST['enviar_lembrete_chamados']) && $tem_acesso_gerenciamento) {
         $targetUserId = (int) ($_POST['target_user_id'] ?? 0);
         $stmtPending = $conn->prepare("SELECT u.nome, u.email, c.id, c.titulo, c.prioridade, c.data_abertura FROM usuarios u INNER JOIN chamados c ON c.usuario_id = u.id WHERE u.id = ? AND c.status NOT IN ('resolvido', 'fechado') ORDER BY c.data_abertura ASC");
@@ -318,17 +274,21 @@ if ($user_role === 'admin') {
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Meu Perfil - Auxiliar Obras</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="../assets/css/corporate-calendar.css" rel="stylesheet">
+    <link href="../assets/css/app-shell.css" rel="stylesheet">
 </head>
 
-<body class="bg-light">
+<body class="app-page-body">
 
-    <header class="bg-white border-bottom shadow-sm mb-4">
+    <header class="app-toolbar mb-4">
         <div class="container py-3 d-flex justify-content-between align-items-center">
             <div class="d-flex align-items-center gap-2">
                 <span class="fs-4 fw-bold text-primary">Auxiliar Obras</span>
-                <span class="badge bg-secondary text-uppercase"><?= htmlspecialchars($user_role) ?></span>
+                <span class="badge bg-secondary text-uppercase role-badge"><?= htmlspecialchars($user_role) ?></span>
             </div>
             <?php if ($tem_acesso_gerenciamento): ?>
             <a href="log_emails.php" class="btn btn-outline-secondary d-flex align-items-center gap-2">Gerenciar e-mails</a>
@@ -348,7 +308,7 @@ if ($user_role === 'admin') {
                 <?php endif; ?>
 
                 <!-- Informações do Perfil Logado -->
-                <div class="card mb-4 shadow-sm">
+                <div class="panel-card mb-4">
                     <div class="card-body">
                         <h4 class="card-title mb-4">Meu Perfil</h4>
                         <form method="POST">
@@ -370,7 +330,7 @@ if ($user_role === 'admin') {
                 </div>
 
                 <!-- Painel de Ações e Acessos -->
-                <div class="card mb-4 shadow-sm">
+                <div class="panel-card mb-4">
                     <div class="card-body">
                         <h4 class="card-title mb-3">Ações Disponíveis</h4>
                         <div class="d-flex flex-wrap gap-2">
@@ -442,7 +402,7 @@ if ($user_role === 'admin') {
 
                 <!-- Painel de Gerenciamento Geral (Exclusivo Administrador) -->
                 <?php if ($user_role === 'admin'): ?>
-                <div class="card shadow-sm mb-4">
+                <div class="panel-card mb-4">
                     <div class="card-body">
                         <h4 class="card-title mb-4">Responsáveis por Obra</h4>
                         <div class="table-responsive">
@@ -476,7 +436,7 @@ if ($user_role === 'admin') {
                 </div>
                 <?php endif; ?>
                 <?php if ($tem_acesso_gerenciamento): ?>
-                <div class="card shadow-sm">
+                <div class="panel-card">
                     <div class="card-body">
                         <h4 class="card-title mb-4">Gerenciar, Alterar e Remover Usuários</h4>
                         <div class="table-responsive">
@@ -512,16 +472,13 @@ if ($user_role === 'admin') {
                                                 <input type="hidden" name="editar_usuario_sistema" value="1">
                                                 <input type="hidden" name="edit_id" value="<?= $usuario['id'] ?>">
                                                 <input type="text" name="edit_nome"
-                                                    class="form-control form-control-sm d-inline-block mb-1"
-                                                    style="width:120px;"
+                                                    class="form-control form-control-sm d-inline-block mb-1 inline-field-sm"
                                                     value="<?= htmlspecialchars($usuario['nome']) ?>" required>
                                                 <input type="email" name="edit_email"
-                                                    class="form-control form-control-sm d-inline-block mb-1"
-                                                    style="width:140px;"
+                                                    class="form-control form-control-sm d-inline-block mb-1 inline-field-md"
                                                     value="<?= htmlspecialchars($usuario['email']) ?>" required>
                                                 <select name="edit_perfil"
-                                                    class="form-select form-select-sm d-inline-block mb-1"
-                                                    style="width:100px变量;">
+                                                    class="form-select form-select-sm d-inline-block mb-1 inline-field-role">
                                                     <option value="comum" <?= ($userLvl=='comum')?'selected':'' ?>>Comum
                                                     </option>
                                                     <option value="operador"
@@ -542,8 +499,8 @@ if ($user_role === 'admin') {
                                                 <input type="hidden" name="target_user_id"
                                                     value="<?= $usuario['id'] ?>">
                                                 <input type="password" name="nova_senha_forcada"
-                                                    class="form-control form-control-sm d-inline-block"
-                                                    style="width:100px;" placeholder="Nova Senha" minlength="12" required>
+                                                    class="form-control form-control-sm d-inline-block inline-field-role"
+                                                    placeholder="Nova Senha" minlength="12" required>
                                                 <button type="submit" class="btn btn-sm btn-secondary">Senha</button>
                                             </form>
 
