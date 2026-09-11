@@ -147,7 +147,6 @@ CREATE TABLE obra_responsaveis (
   CONSTRAINT uq_obra_usuario UNIQUE (obra_id, usuario_id)
 );
 
--- Usuário Admin padrão (Senha original: admin123, hash bcrypt)
-INSERT INTO usuarios (nome, email, senha, role, tipo)
-VALUES ('Administrador', 'admin@admin.com', '$2y$10$w8uM5H30a2F65d... (use seu hash)', 'admin', 'admin')
-ON CONFLICT (email) DO NOTHING;
+-- O primeiro administrador NÃO é semeado aqui: crie-o em Authentication → Users
+-- (Supabase Auth) e vincule o perfil com o UPSERT documentado no final de
+-- database/migrations/20260905_supabase_auth_rls.sql (usa auth_uid, não senha).

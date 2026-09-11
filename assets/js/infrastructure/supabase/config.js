@@ -15,8 +15,8 @@
 
 const override = globalThis.__AUXILIAR_OBRAS_CONFIG__ ?? {};
 
-export const SUPABASE_URL = override.url ?? 'https://SEU-PROJETO.supabase.co';
-export const SUPABASE_ANON_KEY = override.anonKey ?? 'SUA-CHAVE-ANON-PUBLICA';
+export const SUPABASE_URL = override.url ?? 'https://mjlxcziyzkvgmwbyzubf.supabase.co';
+export const SUPABASE_ANON_KEY = override.anonKey ?? 'sb_publishable_QIc8oLLvjm1T5m5O2kS2tA_rKp-8JPY';
 
 const configured = /^https:\/\/[\w-]+\.supabase\.co/.test(SUPABASE_URL)
     && SUPABASE_ANON_KEY.length > 40

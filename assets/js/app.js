@@ -124,9 +124,9 @@ function syncChrome(key) {
 // --- Modais de criação (formulários com os mesmos campos do backend PHP) ---
 
 /** Apenas as obras que o usuário pode acessar (responsável vê só as designadas). */
-function obraOptions() {
+function obraOptions(selectedId) {
     return store.obrasFor(Auth.user())
-        .map(item => `<option value="${item.id}">${ui.escapeHtml(item.name)}</option>`).join('');
+        .map(item => `<option value="${item.id}" ${String(item.id) === String(selectedId) ? 'selected' : ''}>${ui.escapeHtml(item.name)}</option>`).join('');
 }
 
 function categoryOptions() {
@@ -134,7 +134,7 @@ function categoryOptions() {
         .map(([key, label]) => `<option value="${key}">${label}</option>`).join('');
 }
 
-function openEntityModal(type, prefillDate) {
+function openEntityModal(type, prefillDate, presetObraId) {
     if (type === 'obra') {
         ui.openModal('Nova obra', `
             <div class="form-grid">
@@ -156,7 +156,7 @@ function openEntityModal(type, prefillDate) {
         ui.openModal('Nova atividade', `
             <div class="form-grid">
                 <div class="form-field full"><label for="f-title">Título</label><input class="field" id="f-title" name="titulo" required></div>
-                <div class="form-field"><label for="f-obra">Obra</label><select class="field" id="f-obra" name="obra_id">${obraOptions()}</select></div>
+                <div class="form-field"><label for="f-obra">Obra</label><select class="field" id="f-obra" name="obra_id">${obraOptions(presetObraId)}</select></div>
                 <div class="form-field"><label for="f-date">Prazo</label><input class="field" id="f-date" name="data_limite" type="date" value="${prefillDate ?? ''}" required></div>
                 <div class="form-field full"><label for="f-desc">Descrição</label><textarea class="field" id="f-desc" name="descricao" rows="3"></textarea></div>
             </div>`,
@@ -168,7 +168,7 @@ function openEntityModal(type, prefillDate) {
         ui.openModal('Novo lançamento', `
             <div class="form-grid">
                 <div class="form-field full"><label for="f-description">Descrição</label><input class="field" id="f-description" name="descricao" required></div>
-                <div class="form-field"><label for="f-tobra">Obra</label><select class="field" id="f-tobra" name="obra_id">${obraOptions()}</select></div>
+                <div class="form-field"><label for="f-tobra">Obra</label><select class="field" id="f-tobra" name="obra_id">${obraOptions(presetObraId)}</select></div>
                 <div class="form-field"><label for="f-category">Categoria</label><select class="field" id="f-category" name="categoria">${categoryOptions()}</select></div>
                 <div class="form-field"><label for="f-qty">Quantidade</label><input class="field" id="f-qty" name="quantidade" type="number" min="0.01" step="0.01" required></div>
                 <div class="form-field"><label for="f-unit">Valor unitário (R$)</label><input class="field" id="f-unit" name="valor_unitario" type="number" min="0" step="0.01" required></div>
@@ -181,7 +181,7 @@ function openEntityModal(type, prefillDate) {
     if (type === 'budget') {
         ui.openModal('Definir orçamento', `
             <div class="form-grid">
-                <div class="form-field"><label for="f-bobra">Obra</label><select class="field" id="f-bobra" name="obra_id">${obraOptions()}</select></div>
+                <div class="form-field"><label for="f-bobra">Obra</label><select class="field" id="f-bobra" name="obra_id">${obraOptions(presetObraId)}</select></div>
                 <div class="form-field"><label for="f-bvalue">Orçamento (R$)</label><input class="field" id="f-bvalue" name="valor_orcado" type="number" min="0" step="0.01" required></div>
             </div>`,
             data => financialService.setBudget(data),
@@ -191,7 +191,7 @@ function openEntityModal(type, prefillDate) {
     if (type === 'document') {
         ui.openModal('Adicionar documento', `
             <div class="form-grid">
-                <div class="form-field"><label for="f-dobra">Obra</label><select class="field" id="f-dobra" name="obra_id">${obraOptions()}</select></div>
+                <div class="form-field"><label for="f-dobra">Obra</label><select class="field" id="f-dobra" name="obra_id">${obraOptions(presetObraId)}</select></div>
                 <div class="form-field"><label for="f-dtype">Tipo</label><select class="field" id="f-dtype" name="tipo">
                     <option>Geral</option><option>Nota fiscal</option><option>Contrato</option><option>Planta</option><option>Vistoria</option><option>Alvará</option>
                 </select></div>
@@ -213,12 +213,14 @@ function openEntityModal(type, prefillDate) {
 // --- Delegação global de eventos (ações de tabela e navegação auxiliar) ---
 
 document.addEventListener('click', event => {
-    const action = event.target.closest('[data-action]')?.dataset.action;
+    const actionTarget = event.target.closest('[data-action]');
+    const action = actionTarget?.dataset.action;
+    const presetObra = actionTarget?.dataset.presetObra;
     if (action === 'new-obra') openEntityModal('obra');
-    if (action === 'new-activity') openEntityModal('activity');
-    if (action === 'new-transaction') openEntityModal('transaction');
-    if (action === 'new-budget') openEntityModal('budget');
-    if (action === 'new-document') openEntityModal('document');
+    if (action === 'new-activity') openEntityModal('activity', undefined, presetObra);
+    if (action === 'new-transaction') openEntityModal('transaction', undefined, presetObra);
+    if (action === 'new-budget') openEntityModal('budget', undefined, presetObra);
+    if (action === 'new-document') openEntityModal('document', undefined, presetObra);
     if (action === 'close-modal') ui.closeModal();
 
     const routeLink = event.target.closest('[data-route-link]')?.dataset.routeLink;

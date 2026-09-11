@@ -146,7 +146,10 @@ create policy atividades_select on public.atividades
 drop policy if exists atividades_insert on public.atividades;
 create policy atividades_insert on public.atividades
     for insert to authenticated
-    with check (obra_id is null ? public.is_full_access() : public.can_access_obra(obra_id));
+    with check (
+        (obra_id is null and public.is_full_access())
+        or (obra_id is not null and public.can_access_obra(obra_id))
+    );
 
 drop policy if exists atividades_update on public.atividades;
 create policy atividades_update on public.atividades

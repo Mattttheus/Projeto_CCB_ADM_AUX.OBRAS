@@ -1,9 +1,13 @@
 // Presentation/Pages — equivalente a page/gerenciar_obra.php
 // Inclui a designação de responsáveis pelo admin (obra_responsaveis):
 // cada responsável de igreja passa a ver apenas as obras designadas a ele.
+// O botão "Detalhes" consolida cronograma, financeiro, documentos e chamados
+// da obra em um único painel — mesma ideia das abas do gerenciar_obra.php.
 import { obraStatusLabel } from '../../domain/obra/ObraStatus.js';
+import { displayStatus, ACTIVITY_STATUS_LABELS } from '../../domain/activity/ActivityStatus.js';
+import { categoryLabel } from '../../domain/finance/FinancialCategory.js';
 import { ROLE_LABELS } from '../../core/Auth.js';
-import { layout, panel, badge, money, escapeHtml, openModal, notify } from '../ui.js';
+import { layout, panel, badge, money, formatDate, formatDateTime, escapeHtml, openModal, openInfoModal, notify } from '../ui.js';
 
 function responsaveisNames(ctx, obra) {
     const nomes = (obra.responsaveis ?? [])
@@ -25,12 +29,67 @@ function rows(ctx, items) {
             <td>${money(item.budget)}</td>
             <td>${responsaveisNames(ctx, item)}</td>
             <td>
+                <button class="table-action" data-view="${item.id}">Detalhes</button>
                 ${isAdmin ? `<button class="table-action" data-assign="${item.id}">Responsáveis</button>` : ''}
                 ${isAdmin ? `<button class="table-action" data-delete="obra:${item.id}">Excluir</button>` : ''}
             </td>
         </tr>`;
     }).join('')
         : '<tr><td colspan="6"><div class="empty-state">Nenhuma obra encontrada.</div></td></tr>';
+}
+
+/** Painel único com cronograma, financeiro, documentos e chamados da obra — equivalente às abas do gerenciar_obra.php. */
+function detailHtml(ctx, obra) {
+    const activities = ctx.store.state.activities.filter(item => item.obraId === obra.id)
+        .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
+    const transactions = ctx.store.state.transactions.filter(item => item.obraId === obra.id)
+        .sort((a, b) => b.date.localeCompare(a.date));
+    const documents = ctx.store.state.documents.filter(item => item.obraId === obra.id)
+        .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+    const chamados = ctx.store.state.chamados.filter(item => item.obraId === obra.id)
+        .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
+
+    const spent = transactions.reduce((sum, item) => sum + item.quantity * item.unitCost, 0);
+    const progress = ctx.store.obraProgress(obra.id);
+
+    return `
+        <div class="list-row">
+            <div class="row-main">
+                <div class="row-title">${badge(obra.status, obraStatusLabel(obra.status))} Progresso do cronograma: <strong>${progress}%</strong></div>
+                <div class="row-meta">Orçamento: <strong>${money(obra.budget)}</strong> · Gasto: <strong>${money(spent)}</strong> · Saldo: <strong>${money(obra.budget - spent)}</strong></div>
+            </div>
+        </div>
+        <h3 class="detail-heading">Cronograma <button class="table-action" data-action="new-activity" data-preset-obra="${obra.id}">+ Atividade</button></h3>
+        <div class="data-list">${activities.map(item => `
+            <div class="list-row">
+                <div class="row-main"><div class="row-title">${escapeHtml(item.title)}</div>
+                <div class="row-meta">Prazo ${formatDate(item.date)}${item.description ? ` · ${escapeHtml(item.description)}` : ''}</div></div>
+                ${badge(displayStatus(item), ACTIVITY_STATUS_LABELS[displayStatus(item)])}
+            </div>`).join('') || '<div class="empty-state">Nenhuma atividade cadastrada.</div>'}</div>
+
+        <h3 class="detail-heading">Financeiro <button class="table-action" data-action="new-transaction" data-preset-obra="${obra.id}">+ Lançamento</button></h3>
+        <div class="data-list">${transactions.map(item => `
+            <div class="list-row">
+                <div class="row-main"><div class="row-title">${escapeHtml(item.description)}</div>
+                <div class="row-meta">${escapeHtml(categoryLabel(item.category))} · ${formatDate(item.date)} · ${item.quantity} × ${money(item.unitCost)}</div></div>
+                <strong>${money(item.quantity * item.unitCost)}</strong>
+            </div>`).join('') || '<div class="empty-state">Nenhum lançamento nesta obra.</div>'}</div>
+
+        <h3 class="detail-heading">Documentos <button class="table-action" data-action="new-document" data-preset-obra="${obra.id}">+ Arquivo</button></h3>
+        <div class="data-list">${documents.map(item => `
+            <div class="list-row">
+                <div class="row-main"><div class="row-title">${escapeHtml(item.name)}</div>
+                <div class="row-meta">${escapeHtml(item.type ?? 'Geral')} · Adicionado em ${formatDate(item.date)}</div></div>
+                ${item.path ? `<button class="table-action" data-download="${item.id}">Baixar</button>` : ''}
+            </div>`).join('') || '<div class="empty-state">Nenhum documento nesta obra.</div>'}</div>
+
+        <h3 class="detail-heading">Chamados</h3>
+        <div class="data-list">${chamados.map(item => `
+            <div class="list-row">
+                <div class="row-main"><div class="row-title">${escapeHtml(item.title)}</div>
+                <div class="row-meta">${badge(item.priority)} · Aberto em ${item.date ? formatDateTime(item.date) : '—'}</div></div>
+                ${badge(item.status)}
+            </div>`).join('') || '<div class="empty-state">Nenhum chamado nesta obra.</div>'}</div>`;
 }
 
 export function render(ctx) {
@@ -55,8 +114,16 @@ export function bind(ctx) {
     paint('');
     filter.addEventListener('input', event => paint(event.target.value));
 
-    // Designação de responsáveis (admin): checkboxes de usuários por obra.
     tbody.addEventListener('click', event => {
+        // Detalhes: cronograma + financeiro + documentos + chamados da obra, num único painel.
+        const viewId = event.target.closest('[data-view]')?.dataset.view;
+        if (viewId) {
+            const obra = ctx.store.state.obras.find(item => item.id === Number(viewId));
+            if (obra) openInfoModal(escapeHtml(obra.name), detailHtml(ctx, obra));
+            return;
+        }
+
+        // Designação de responsáveis (admin): checkboxes de usuários por obra.
         const obraId = event.target.closest('[data-assign]')?.dataset.assign;
         if (!obraId || !ctx.auth.isAdmin()) return;
         const obra = ctx.store.state.obras.find(item => item.id === Number(obraId));
